@@ -4,6 +4,7 @@ server/node_modules/
 client/dist/
 client/build/
 coverage/
+test-results/
 .env
 .env.*
 !.env.example
