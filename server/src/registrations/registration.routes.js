@@ -1,0 +1,40 @@
+const express = require('express');
+
+const { registrationSchema } = require('./registration.schema');
+const { authenticate } = require('../middleware/authenticate');
+const { requireRole } = require('../middleware/require-role');
+
+function createRegistrationRouter({ service, authService }) {
+  const router = express.Router();
+  router.use(authenticate(authService));
+  const reception = requireRole('Tiếp nhận');
+  const staff = requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi');
+
+  router.get('/', staff, async (req, res, next) => {
+    try {
+      res.json({ registrations: await service.list() });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/', reception, async (req, res, next) => {
+    const parsed = registrationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Thông tin đăng ký không hợp lệ.', details: parsed.error.flatten().fieldErrors },
+      });
+      return;
+    }
+    try {
+      const registration = await service.create({ input: parsed.data, userId: req.user.id });
+      res.status(201).json({ registration });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+}
+
+module.exports = { createRegistrationRouter };

@@ -30,9 +30,9 @@ function sendError(res, error) {
   });
 }
 
-function createAuthRouter({ db, config }) {
+function createAuthRouter({ db, config, authService }) {
   const router = express.Router();
-  const service = createAuthService({ db, jwtSecret: config.jwtSecret });
+  const service = authService || createAuthService({ db, jwtSecret: config.jwtSecret });
   const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: config.nodeEnv === 'test' ? 100 : 5,
