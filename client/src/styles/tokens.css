@@ -1,8 +1,75 @@
 :root {
-  --acci-bg: #f7f8fc; --acci-sidebar: #ffffff; --acci-surface: #ffffff; --acci-surface-muted: #f1f4f9;
-  --acci-text: #152033; --acci-muted: #6b778c; --acci-primary: #2563eb; --acci-primary-soft: #eaf1ff;
-  --acci-border: #e2e7ef; --acci-focus: #f59e0b; --acci-radius-sm: .65rem; --acci-radius-md: 1rem;
-  --acci-shadow: 0 8px 24px rgba(24,39,75,.06); --acci-shadow-lg: 0 16px 40px rgba(24,39,75,.16);
+  --color-brand-navy: #17233B;
+  --color-action-primary: #356AE6;
+  --color-action-primary-hover: #2858C7;
+  --color-action-primary-subtle: #EAF0FF;
+  --color-canvas: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #EEF2F7;
+  --color-text-primary: #172033;
+  --color-text-secondary: #667085;
+  --color-border: #DCE2EA;
+  --color-focus: #356AE6;
+  --color-status-success: #17875F;
+  --color-status-warning: #B45309;
+  --color-status-danger: #C2413B;
+  --color-on-action: #FFFFFF;
+
+  --font-family-sans: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
+  --font-size-body: 0.875rem;
+  --line-height-body: 1.5714;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(23, 32, 51, 0.06);
+  --shadow-md: 0 10px 24px rgba(23, 32, 51, 0.08);
+  --shadow-lg: 0 20px 48px rgba(23, 32, 51, 0.14);
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --z-header: 20;
+  --z-drawer: 40;
+  --z-modal: 60;
+
+  /* Compatibility aliases remain until the owning page styles migrate. */
+  --acci-bg: var(--color-canvas);
+  --acci-sidebar: var(--color-surface);
+  --acci-surface: var(--color-surface);
+  --acci-surface-muted: var(--color-surface-subtle);
+  --acci-text: var(--color-text-primary);
+  --acci-muted: var(--color-text-secondary);
+  --acci-primary: var(--color-action-primary);
+  --acci-primary-soft: var(--color-action-primary-subtle);
+  --acci-border: var(--color-border);
+  --acci-focus: var(--color-focus);
+  --acci-radius-sm: var(--radius-sm);
+  --acci-radius-md: var(--radius-lg);
+  --acci-shadow: var(--shadow-md);
+  --acci-shadow-lg: var(--shadow-lg);
 }
-html.dark { --acci-bg: #111827; --acci-sidebar: #172033; --acci-surface: #1c273a; --acci-surface-muted: #25324a; --acci-text: #f5f7fb; --acci-muted: #a6b1c3; --acci-primary: #78a5ff; --acci-primary-soft: #203b70; --acci-border: #2d3a52; }
-:focus-visible { outline: 3px solid var(--acci-focus); outline-offset: 2px; }
+
+html[data-theme='dark'],
+html.dark {
+  --color-canvas: #0F172A;
+  --color-surface: #182338;
+  --color-surface-subtle: #22304A;
+  --color-text-primary: #F4F7FB;
+  --color-text-secondary: #AAB4C3;
+  --color-border: #2C3A52;
+  --color-action-primary: #82A7FF;
+  --color-action-primary-hover: #A3BFFF;
+  --color-action-primary-subtle: #243B6A;
+  --color-focus: #A3BFFF;
+  --color-on-action: #17233B;
+}

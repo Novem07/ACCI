@@ -1,6 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import '@fontsource/be-vietnam-pro/400.css';
+import '@fontsource/be-vietnam-pro/500.css';
+import '@fontsource/be-vietnam-pro/600.css';
+import '@fontsource/be-vietnam-pro/700.css';
+import './styles/tokens.css';
+import './styles/reset.css';
+import './styles/utilities.css';
 import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
