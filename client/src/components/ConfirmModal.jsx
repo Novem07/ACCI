@@ -15,7 +15,7 @@ function ConfirmModal({ name, cert, date, gender, dob, customerType, onCancel, o
   
     return (
       <div className="modal-overlay">
-        <div className="confirm-modal">
+        <div className="confirm-modal-box">
           <div className="modal-title">Xác nhận thông tin</div>
           <div className="modal-info">
             <p><strong>Họ tên thí sinh:</strong> {name}</p>

@@ -1,0 +1,41 @@
+.renew-page {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #f1f3f5;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  .checkbox-group {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+  
+  .date-picker {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .button-group {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  button.cancel {
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px;
+  }
+  
+  button.confirm {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px;
+  }
+  

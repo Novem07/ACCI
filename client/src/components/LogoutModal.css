@@ -12,7 +12,7 @@
 .logout-modal {
   position: fixed;         /* ⬅ cần thêm */
   top: 400px;              /* ⬅ chỉnh lên/xuống */
-  left: 640px;             /* ⬅ chỉnh trái/phải */
+  left: 840px;             /* ⬅ chỉnh trái/phải */
   background: #ffffff;
   border: 2px solid #8e8cb4;
   border-radius: 12px;

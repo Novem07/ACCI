@@ -50,7 +50,7 @@ function HomePage() {
       {/* Nội dung */}
       <div className="homepage-container">
         <h2>Xin chào, <strong>{user.name}</strong>!</h2>
-        <p>Bạn đang đăng nhập với vai trò <strong>{user.role}</strong>. Các chức năng phù hợp sẽ hiển thị bên dưới.</p>
+        <p>Bạn đang đăng nhập với vai trò <strong> Nhân viên {user.role}</strong>. Các chức năng phù hợp sẽ hiển thị bên dưới.</p>
 
         <div className="card-group">
           <div

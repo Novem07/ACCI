@@ -1,0 +1,156 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  .page-wrapper {
+    background-color: #eaf1fb;
+    min-height: 100vh;
+  }
+  
+  /* Navbar */
+  .navbar {
+    background-color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #eaeaea;
+  }
+  
+  .logo {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .nav-links span {
+    margin: 0 12px;
+    cursor: pointer;
+    position: relative;
+    font-weight: 500;
+  }
+  
+  .nav-links .active {
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .nav-links .active::after {
+    content: "";
+    height: 3px;
+    background-color: #ffc107;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+  }
+  
+  .nav-links .disabled {
+    color: gray;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  
+  .nav-search-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .nav-search-user input {
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+  
+  .user-icon {
+    font-size: 14px;
+  }
+  
+  .logout-icon {
+    cursor: pointer;
+  }
+  
+  /* Main Content */
+  .accountant-container {
+    padding: 30px 60px;
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+  }
+  
+  .search-bar input {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 250px;
+    margin-bottom: 20px;
+  }
+  
+  /* Table Style */
+  .table-wrapper {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+    overflow-x: auto;
+  }
+  
+  .payment-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .payment-table th {
+    background-color: #ffc107;
+    padding: 12px;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .payment-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .btn {
+    padding: 6px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .btn-xuly {
+    background-color: #0d6efd;
+  }
+  
+  .btn-capnhat {
+    background-color: #0d6efd;
+  }
+  
+  /* Pagination */
+  .pagination {
+    text-align: center;
+  }
+  
+  .pagination .page {
+    display: inline-block;
+    margin: 0 4px;
+    background-color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+  }
+  
+  .pagination .active {
+    background-color: #333;
+    color: white;
+    font-weight: bold;
+  }
+  

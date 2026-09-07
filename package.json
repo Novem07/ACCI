@@ -8,6 +8,8 @@
     "client": "cd client && npm start"
   },
   "dependencies": {
+    "dayjs": "^1.11.13",
+    "express-session": "^1.18.1",
     "mssql": "^11.0.1"
   }
 }
