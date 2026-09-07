@@ -24,6 +24,6 @@ function Get-SqlBaseArguments {
 }
 
 $arguments = Get-SqlBaseArguments
-& sqlcmd @arguments -b -v "DatabaseName=$env:DB_NAME" "DemoPasswordHash=$hash" -i database/seed/demo_users.sql
+& sqlcmd @arguments -f 65001 -b -v "DatabaseName=$env:DB_NAME" "DemoPasswordHash=$hash" -i database/seed/demo_users.sql
 if ($LASTEXITCODE -ne 0) { throw "sqlcmd failed with exit code $LASTEXITCODE" }
 Write-Output 'Demo users seeded with the supplied password.'

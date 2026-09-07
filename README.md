@@ -22,9 +22,9 @@ Edit `.env` with a SQL login that can read/write the ACCI schema. Do not commit 
 Run the baseline and migrations with a SQL account allowed to create/alter the database. SQL authentication example:
 
 ```powershell
-sqlcmd -S $env:DB_SERVER -U $env:DB_USER -P $env:DB_PASSWORD -C -b -v DatabaseName=ACCI_DB -i database/migrations/001_baseline.sql
-sqlcmd -S $env:DB_SERVER -U $env:DB_USER -P $env:DB_PASSWORD -C -b -v DatabaseName=ACCI_DB -i database/migrations/002_auth_and_workflow_integrity.sql
-sqlcmd -S $env:DB_SERVER -U $env:DB_USER -P $env:DB_PASSWORD -C -b -v DatabaseName=ACCI_DB -i Trigger.sql
+sqlcmd -S $env:DB_SERVER -U $env:DB_USER -P $env:DB_PASSWORD -C -f 65001 -b -v DatabaseName=ACCI_DB -i database/migrations/001_baseline.sql
+sqlcmd -S $env:DB_SERVER -U $env:DB_USER -P $env:DB_PASSWORD -C -f 65001 -b -v DatabaseName=ACCI_DB -i database/migrations/002_auth_and_workflow_integrity.sql
+sqlcmd -S $env:DB_SERVER -U $env:DB_USER -P $env:DB_PASSWORD -C -f 65001 -b -v DatabaseName=ACCI_DB -i Trigger.sql
 ```
 
 The baseline creates the database and schema. `Database.sql` is also the included baseline source, and must be executed with the `DatabaseName` SQLCMD variable. The migration is safe to run again where its objects already exist; review existing production data before applying schema changes.

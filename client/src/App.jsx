@@ -17,6 +17,7 @@ import AccountantPage from './pages/AccountantPage';
 import ProcessRegister from './pages/ProcessRegister';
 import ViewTempThisinh from './pages/ViewTempThisinh';
 import ExtendFormPage from './pages/ExtendFormPage';
+import './styles/design.css';
 
 const ToChucThiPage = () => <AppShell><main><h2>Trang Tổ chức thi</h2></main></AppShell>;
 const NhapLieuPage = () => <AppShell><main><h2>Trang Nhập liệu</h2></main></AppShell>;

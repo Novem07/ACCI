@@ -1,70 +1,40 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import Icon from './Icon';
+import { navigation } from './navigation';
 import './AppShell.css';
 
-const roleLinks = {
-  'Tiếp nhận': [
-    { to: '/tiepnhan', label: 'Phiếu đăng ký' },
-    { to: '/taophieu', label: 'Tạo phiếu' },
-    { to: '/giahan', label: 'Gia hạn' },
-    { to: '/xemthisinh', label: 'Thí sinh' },
-    { to: '/phieuduthi', label: 'Phiếu dự thi' },
-  ],
-  'Kế Toán': [
-    { to: '/ketoan', label: 'Thanh toán' },
-    { to: '/xemthisinh', label: 'Thí sinh' },
-    { to: '/phieuduthi', label: 'Phiếu dự thi' },
-  ],
-  'Tổ chức thi': [
-    { to: '/tochucthi', label: 'Tổ chức thi' },
-    { to: '/phieuduthi', label: 'Phiếu dự thi' },
-    { to: '/xemthisinh', label: 'Thí sinh' },
-  ],
-};
-
-function AppShell({ children }) {
+export default function AppShell({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system');
-  const links = useMemo(() => roleLinks[user?.role] || [], [user?.role]);
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const links = navigation[user?.role] || [];
+  const page = [...links].reverse().find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
 
-  useEffect(() => {
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark));
-  }, [theme]);
+  useEffect(() => { document.documentElement.classList.toggle('dark', theme === 'dark'); }, [theme]);
+  const toggleTheme = () => { const next = theme === 'dark' ? 'light' : 'dark'; setTheme(next); localStorage.setItem('theme', next); };
+  const handleLogout = async () => { await logout().catch(() => undefined); navigate('/'); };
 
-  const handleLogout = async () => {
-    await logout().catch(() => undefined);
-    navigate('/');
-  };
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('theme', next);
-  };
-
-  return (
-    <div className="app-shell">
+  return <div className="app-shell">
+    <aside className={`app-sidebar ${open ? 'is-open' : ''}`}>
+      <NavLink className="app-brand" to="/home"><span className="brand-mark">A</span><span>ACCI <small>CENTER</small></span></NavLink>
+      <p className="nav-caption">KHÔNG GIAN LÀM VIỆC</p>
+      <nav id="workspace-navigation" className="app-nav" aria-label="Điều hướng chính">
+        {[{ to: '/home', label: 'Tổng quan', icon: 'grid' }, ...links].map((link) => <NavLink end key={link.to} to={link.to} onClick={() => setOpen(false)}><Icon name={link.icon} /><span>{link.label}</span></NavLink>)}
+      </nav>
+      <div className="sidebar-note"><span className="role-dot" />{user?.role}<small>Hệ thống quản lý chứng chỉ</small></div>
+    </aside>
+    <div className="app-workspace">
       <header className="app-header">
-        <NavLink className="app-brand" to="/home">ACCI CENTER</NavLink>
-        <nav className="app-nav" aria-label="Điều hướng chính">
-          {links.map((link) => (
-            <NavLink key={link.to} to={link.to} className={({ isActive }) => (isActive ? 'active' : undefined)}>
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="app-actions">
-          <span className="app-user">👤 {user?.name}</span>
-          <button type="button" onClick={toggleTheme} aria-label="Đổi giao diện">◐</button>
-          <button type="button" onClick={handleLogout}>Đăng xuất</button>
-        </div>
+        <button className="mobile-menu icon-button" type="button" aria-label="Mở điều hướng" aria-expanded={open} aria-controls="workspace-navigation" onClick={() => setOpen(!open)}><Icon name="menu" /></button>
+        <div className="page-context"><span>Không gian làm việc</span><strong>{page?.label || 'Tổng quan'}</strong></div>
+        <div className="app-actions"><button className="icon-button" type="button" onClick={toggleTheme} aria-label="Đổi giao diện"><Icon name="moon" /></button><span className="user-avatar" aria-hidden="true">{user?.name?.slice(0, 1) || 'A'}</span><span className="app-user">{user?.name}<small>{user?.role}</small></span><button type="button" onClick={handleLogout}>Đăng xuất</button></div>
       </header>
       <div className="app-content">{children}</div>
+      <footer className="app-footer">ACCI Center <span>Quản lý tập trung. Làm việc hiệu quả.</span></footer>
     </div>
-  );
+  </div>;
 }
-
-export default AppShell;

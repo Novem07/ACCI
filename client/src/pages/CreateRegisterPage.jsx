@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './CreateRegisterPage.css';
 import { api, getErrorMessage } from '../api/client';
 import AppShell from '../components/AppShell';
+import AsyncState from '../components/AsyncState';
 
 const emptyCustomer = {
   fullName: '',
@@ -125,7 +126,9 @@ function CreateRegisterPage() {
     }
   };
 
-  if (loading) return <div className="page-wrapper"><p>Đang tải dữ liệu...</p></div>;
+  if (loading) {
+    return <AppShell><main className="registration-loading"><AsyncState loading /></main></AppShell>;
+  }
 
   return (
     <AppShell>

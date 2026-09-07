@@ -10,9 +10,9 @@ function Invoke-SqlCommand {
 function Get-SqlBaseArguments {
     $serverName = if ($env:DB_SERVER) { $env:DB_SERVER } else { 'localhost' }
     if ($env:DB_USER -and $env:DB_PASSWORD) {
-        return @('-S', $serverName, '-U', $env:DB_USER, '-P', $env:DB_PASSWORD, '-C')
+        return @('-S', $serverName, '-U', $env:DB_USER, '-P', $env:DB_PASSWORD, '-C', '-f', '65001')
     }
-    return @('-S', $serverName, '-E')
+    return @('-S', $serverName, '-E', '-f', '65001')
 }
 
 $baseArguments = Get-SqlBaseArguments

@@ -1,4 +1,6 @@
-require('dotenv').config();
+const path = require('node:path');
+
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const { createApp } = require('./app');
 const { loadConfig } = require('./config');
