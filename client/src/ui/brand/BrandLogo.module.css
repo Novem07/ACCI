@@ -1,0 +1,12 @@
+.logo {
+  display: block;
+  height: 2.5rem;
+  max-width: 11rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.compact {
+  height: 2.5rem;
+  max-width: 2.5rem;
+}
