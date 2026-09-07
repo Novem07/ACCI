@@ -18,8 +18,13 @@ router.get('/', async (req, res) => {
 
 // Tạo phiếu mới
 router.post('/', async (req, res) => {
-    const { MaKhachHang, NgayDangKy, MaThanhToan, NguoiTao } = req.body;
-    const TrangThaiPhieu = 'Đang xử lý'; // 💡 mặc định luôn  
+    const {
+      MaKhachHang,
+      NgayDangKy,
+      TrangThaiPhieu = 'Đang xử lý',
+      MaThanhToan,
+      NguoiTao
+    } = req.body;
     try {
       const pool = await poolPromise;
       const result = await pool.request().query(`SELECT COUNT(*) AS SoLuong FROM PHIEUDANGKY`);
