@@ -49,7 +49,7 @@ The work is an incremental modernization, not a replacement project. Every slice
 
 ### Typography
 
-Use **Be Vietnam Pro** as the single product family. It is a neo-grotesk family designed with refined Vietnamese letterforms and is suitable for technology-oriented products. Self-host one variable WOFF2 file covering weights 400 through 700, with the fallback stack:
+Use **Be Vietnam Pro** as the single product family. It is a neo-grotesk family designed with refined Vietnamese letterforms and is suitable for technology-oriented products. Bundle local WOFF2 files for weights 400, 500, 600, and 700 through `@fontsource/be-vietnam-pro@5.3.0`, with the fallback stack:
 
 ```css
 font-family: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
@@ -258,7 +258,8 @@ The current Express service structure is sound and remains CommonJS. Refactoring
 ### Correctness changes
 
 - Make registration creation date server-owned; the browser must not decide `registrationDate`.
-- Keep invoice date user-selectable because it is an accounting input, but validate it against the allowed operational date range.
+- Keep invoice date user-selectable because it is an accounting input, but require it to be on or after the registration date and no later than the current calendar date in `Asia/Ho_Chi_Minh`.
+- Centralize date-only conversion and schedule timestamp construction around the `Asia/Ho_Chi_Minh` business timezone; browser or host-machine timezone must not change business validation.
 - Treat role and status values as exact domain constants, while display labels remain Vietnamese.
 - Normalize all API output fields to English names. Remove client fallbacks such as `MaKhachHang || id`.
 - Preserve database transactions and row locks for registration, payment, exam issuance, and extension operations.
