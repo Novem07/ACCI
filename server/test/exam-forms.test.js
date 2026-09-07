@@ -1,0 +1,57 @@
+const assert = require('node:assert/strict');
+const { test } = require('node:test');
+const request = require('supertest');
+
+const { createApp } = require('../src/app');
+
+const config = {
+  nodeEnv: 'test',
+  clientOrigin: 'http://localhost:3000',
+  jwtSecret: 'test-secret-with-at-least-32-characters',
+};
+
+function authDb(role) {
+  return {
+    request() {
+      const current = {
+        input() { return current; },
+        async query() {
+          return { recordset: [{ MaNhanVien: 'NV003', HoTen: 'Lê Văn C', VaiTro: role, MatKhauHash: '$2b$04$Y63QbNce1aiqSHGSPOvH1OtEdkAlGJgkYh9XWekuZDf7DkvG3VZFq' }] };
+        },
+      };
+      return current;
+    },
+  };
+}
+
+test('exam-form issuance is organizer-only and returns stable IDs', async () => {
+  const service = {
+    async create({ input, userId }) { return { registrationId: input.registrationId, forms: [{ id: 'PDT000001', candidateId: 'TS000001', scheduleId: 'LT001' }], createdBy: userId }; },
+    async list() { return { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 0 }; },
+    async get(examFormId) { return { examFormId }; },
+  };
+  const organizerApp = createApp({ db: authDb('Tổ chức thi'), config, services: { examForm: service } });
+  const login = await request(organizerApp).post('/api/auth/login').send({ employeeId: 'NV003', password: 'correct-password' });
+  const issuance = await request(organizerApp)
+    .post('/api/exam-forms')
+    .set('Cookie', login.headers['set-cookie'])
+    .send({ registrationId: 'PDK000001', assignments: [{ candidateId: 'TS000001', scheduleId: 'LT001' }] });
+  assert.equal(issuance.status, 201);
+  assert.equal(issuance.body.issuance.forms[0].id, 'PDT000001');
+
+  const receptionApp = createApp({ db: authDb('Tiếp nhận'), config, services: { examForm: service } });
+  const receptionLogin = await request(receptionApp).post('/api/auth/login').send({ employeeId: 'NV003', password: 'correct-password' });
+  const forbidden = await request(receptionApp)
+    .post('/api/exam-forms')
+    .set('Cookie', receptionLogin.headers['set-cookie'])
+    .send({ registrationId: 'PDK000001', assignments: [{ candidateId: 'TS000001', scheduleId: 'LT001' }] });
+  assert.equal(forbidden.status, 403);
+});
+
+test('exam-form list validates page size before querying', async () => {
+  const service = { async list() { throw new Error('must not query'); } };
+  const app = createApp({ db: authDb('Tổ chức thi'), config, services: { examForm: service } });
+  const login = await request(app).post('/api/auth/login').send({ employeeId: 'NV003', password: 'correct-password' });
+  const response = await request(app).get('/api/exam-forms?pageSize=101').set('Cookie', login.headers['set-cookie']);
+  assert.equal(response.status, 400);
+});

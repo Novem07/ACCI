@@ -10,6 +10,12 @@ const { createCustomerService } = require('./customers/customer.service');
 const { errorHandler } = require('./middleware/error-handler');
 const { createRegistrationRouter } = require('./registrations/registration.routes');
 const { createRegistrationService } = require('./registrations/registration.service');
+const { createPaymentRouter } = require('./payments/payment.routes');
+const { createPaymentService } = require('./payments/payment.service');
+const { createExtensionRouter } = require('./extensions/extension.routes');
+const { createExtensionService } = require('./extensions/extension.service');
+const { createExamFormRouter } = require('./exam-forms/exam-form.routes');
+const { createExamFormService } = require('./exam-forms/exam-form.service');
 
 function createApp({ db, config, services = {} } = {}) {
   const app = express();
@@ -52,6 +58,18 @@ function createApp({ db, config, services = {} } = {}) {
     }));
     app.use('/api/registrations', createRegistrationRouter({
       service: services.registration || createRegistrationService({ db }),
+      authService,
+    }));
+    app.use('/api/payments', createPaymentRouter({
+      service: services.payment || createPaymentService({ db }),
+      authService,
+    }));
+    app.use('/api/extensions', createExtensionRouter({
+      service: services.extension || createExtensionService({ db }),
+      authService,
+    }));
+    app.use('/api/exam-forms', createExamFormRouter({
+      service: services.examForm || createExamFormService({ db }),
       authService,
     }));
   }

@@ -64,6 +64,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.sequences WHERE name = N'SeqPhieuDuThi')
     EXEC(N'CREATE SEQUENCE dbo.SeqPhieuDuThi AS BIGINT START WITH 1 INCREMENT BY 1');
 IF NOT EXISTS (SELECT 1 FROM sys.sequences WHERE name = N'SeqPhieuDangKyGiaHan')
     EXEC(N'CREATE SEQUENCE dbo.SeqPhieuDangKyGiaHan AS BIGINT START WITH 1 INCREMENT BY 1');
+IF NOT EXISTS (SELECT 1 FROM sys.sequences WHERE name = N'SeqHoaDonDangKy')
+    EXEC(N'CREATE SEQUENCE dbo.SeqHoaDonDangKy AS BIGINT START WITH 1 INCREMENT BY 1');
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_PhieuDangKyGiaHan_PhieuDuThi')

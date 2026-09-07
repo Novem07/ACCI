@@ -278,8 +278,9 @@ BEGIN
         SELECT 1
         FROM inserted i
         JOIN PhieuDuThi pdt ON i.MaPhieuDuThi = pdt.MaPhieuDuThi
-        GROUP BY pdt.MaPhieuDuThi, pdt.SoLanGiaHanConLai
-        HAVING COUNT(i.MaPhieuDangKyGiaHan) > (2 - pdt.SoLanGiaHanConLai)
+        GROUP BY pdt.MaPhieuDuThi
+        HAVING (SELECT COUNT(*) FROM PhieuDangKyGiaHan allRequests
+                WHERE allRequests.MaPhieuDuThi = pdt.MaPhieuDuThi) > 2
     )
     BEGIN
         RAISERROR(N'Số lượng phiếu đăng ký gia hạn không phù hợp với số lần gia hạn còn lại.', 16, 1);
@@ -296,8 +297,8 @@ BEGIN
     -- Chỉ nhân viên tiếp nhận được phép tạo
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Tiếp nhận'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Tiếp nhận'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên tiếp nhận mới được tạo phiếu đăng ký gia hạn.', 16, 1);
@@ -313,7 +314,10 @@ BEGIN
         RETURN;
     END;
 
-    INSERT INTO PhieuDangKyGiaHan SELECT * FROM inserted;
+    INSERT INTO PhieuDangKyGiaHan
+      (MaPhieuDangKyGiaHan, TruongHop, MaLichThiMoi, NgayYeuCau, NgayXuLy, MaPhieuDuThi, NguoiTao)
+    SELECT MaPhieuDangKyGiaHan, TruongHop, MaLichThiMoi, NgayYeuCau, NgayXuLy, MaPhieuDuThi, NguoiTao
+    FROM inserted;
 END;
 GO
 
