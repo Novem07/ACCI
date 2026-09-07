@@ -1,7 +1,10 @@
-CREATE DATABASE ACCI_DB;
+IF DB_ID(N'$(DatabaseName)') IS NULL
+BEGIN
+    EXEC(N'CREATE DATABASE [$(DatabaseName)]');
+END;
 GO
 
-USE ACCI_DB;
+USE [$(DatabaseName)];
 GO
 
 CREATE TABLE NhanVien (
@@ -10,7 +13,7 @@ CREATE TABLE NhanVien (
     SDT VARCHAR(15),
     Email VARCHAR(100),
     VaiTro NVARCHAR(50), -- Tiếp nhận, Kế Toán, Tổ chức thi, Nhập liệu, Coi thi
-	MatKhau CHAR(8)
+	MatKhauHash VARCHAR(60) NOT NULL
 );
 
 CREATE TABLE DonViChamThi (
@@ -23,14 +26,18 @@ CREATE TABLE DonViChamThi (
 
 CREATE TABLE KhachHang (
     MaKhachHang VARCHAR(20) PRIMARY KEY,
+    HoTen NVARCHAR(100) NOT NULL,
+    CCCD VARCHAR(20),
     SDT VARCHAR(15),
     Email VARCHAR(100),
     DiaChi NVARCHAR(200),
-    DonVi VARCHAR(20),
+    DonVi VARCHAR(20) NOT NULL
 );
 
 CREATE TABLE ThiSinh (
     MaThiSinh VARCHAR(20) PRIMARY KEY,
+    HoTen NVARCHAR(100) NOT NULL,
+    CCCD VARCHAR(20),
     SDT VARCHAR(15),
     Email VARCHAR(100),
     DiaChi NVARCHAR(200),
@@ -68,11 +75,11 @@ CREATE TABLE LichThi (
 
 CREATE TABLE PhieuDangKy (
     MaPhieuDangKy VARCHAR(20) PRIMARY KEY,
-    NgayDangKy DATE,
-    TrangThaiPhieu NVARCHAR(50), -- Chờ phát hành, Đã phát hành, Đã hủy
+    NgayDangKy DATE NOT NULL,
+    TrangThaiPhieu NVARCHAR(50) NOT NULL, -- Chờ phát hành, Đã phát hành, Đã hủy
     MaThanhToan NVARCHAR(50),
-    MaKhachHang VARCHAR(20),
-    NguoiTao VARCHAR(20),
+    MaKhachHang VARCHAR(20) NOT NULL,
+    NguoiTao VARCHAR(20) NOT NULL,
     FOREIGN KEY (MaKhachHang) REFERENCES KhachHang(MaKhachHang),
     FOREIGN KEY (NguoiTao) REFERENCES NhanVien(MaNhanVien)
 );
@@ -82,13 +89,13 @@ CREATE TABLE PhieuDuThi (
     SoBaoDanh VARCHAR(20),
     NgayThi DATE,
     GioThi TIME,
-    SoLanGiaHanConLai INT,
-    TrangThaiPhieu NVARCHAR(50), -- Đang xử lý, Đã xử lý, Đã phát
-    MaThiSinh VARCHAR(20),
-    MaChungChi VARCHAR(20),
-    MaPhieuDangKy VARCHAR(20),
-    NguoiTao VARCHAR(20),
-    MaLichThi VARCHAR(20),
+    SoLanGiaHanConLai INT NOT NULL CONSTRAINT DF_PhieuDuThi_SoLanGiaHanConLai DEFAULT 2,
+    TrangThaiPhieu NVARCHAR(50) NOT NULL, -- Đang xử lý, Đã xử lý, Đã phát
+    MaThiSinh VARCHAR(20) NOT NULL,
+    MaChungChi VARCHAR(20) NOT NULL,
+    MaPhieuDangKy VARCHAR(20) NOT NULL,
+    NguoiTao VARCHAR(20) NOT NULL,
+    MaLichThi VARCHAR(20) NOT NULL,
     FOREIGN KEY (MaThiSinh) REFERENCES ThiSinh(MaThiSinh),
     FOREIGN KEY (MaChungChi) REFERENCES ChungChi(MaChungChi),
     FOREIGN KEY (MaPhieuDangKy) REFERENCES PhieuDangKy(MaPhieuDangKy),
@@ -139,12 +146,13 @@ CREATE TABLE ChiTietCoiThi (
 
 CREATE TABLE PhieuDangKyGiaHan (
     MaPhieuDangKyGiaHan VARCHAR(20) PRIMARY KEY,
-    TruongHop NVARCHAR(100), -- Thường, Đặc biệt
-    LichThiMoi DATE,
-    NgayYeuCau DATE,
+    TruongHop NVARCHAR(100) NOT NULL, -- Thường, Đặc biệt
+    MaLichThiMoi VARCHAR(20) NOT NULL,
+    NgayYeuCau DATE NOT NULL,
     NgayXuLy DATE,
-    MaPhieuDuThi VARCHAR(20),
-    NguoiTao VARCHAR(20),
+    MaPhieuDuThi VARCHAR(20) NOT NULL,
+    NguoiTao VARCHAR(20) NOT NULL,
+    CONSTRAINT FK_PDKGH_LichThiMoi FOREIGN KEY (MaLichThiMoi) REFERENCES LichThi(MaLichThi),
     FOREIGN KEY (MaPhieuDuThi) REFERENCES PhieuDuThi(MaPhieuDuThi),
     FOREIGN KEY (NguoiTao) REFERENCES NhanVien(MaNhanVien)
 );
@@ -189,6 +197,16 @@ CREATE TABLE HoaDonGiaHan (
 	FOREIGN KEY (NguoiTao) REFERENCES NhanVien(MaNhanVien)
 );
 
+CREATE TABLE ChiTietPhieuDangKy (
+    MaPhieuDangKy VARCHAR(20) NOT NULL,
+    MaThiSinh VARCHAR(20) NOT NULL,
+    MaChungChi VARCHAR(20) NOT NULL,
+    CONSTRAINT PK_ChiTietPhieuDangKy PRIMARY KEY (MaPhieuDangKy, MaThiSinh),
+    FOREIGN KEY (MaPhieuDangKy) REFERENCES PhieuDangKy(MaPhieuDangKy),
+    FOREIGN KEY (MaThiSinh) REFERENCES ThiSinh(MaThiSinh),
+    FOREIGN KEY (MaChungChi) REFERENCES ChungChi(MaChungChi)
+);
+
 CREATE TABLE QuyDinh (
     MaQuyDinh VARCHAR(20) PRIMARY KEY,
     TenQuyDinh NVARCHAR(100),
@@ -197,11 +215,9 @@ CREATE TABLE QuyDinh (
 
 
 -- data mẫu
-INSERT INTO NhanVien (MaNhanVien, HoTen, SDT, Email, VaiTro, MatKhau) VALUES
-('NV001', N'Nguyễn Văn A', '0901234567', 'nva@example.com', N'Tiếp nhận', 'mk123456'),
-('NV002', N'Trần Thị B', '0902345678', 'ttb@example.com', N'Kế Toán', 'mk123457'),
-('NV003', N'Lê Văn C', '0903456789', 'lvc@example.com', N'Tổ chức thi', 'mk123458'),
-('NV004', N'Phạm Thị D', '0904567890', 'ptd@example.com', N'Nhập liệu', 'mk123459'),
-('NV005', N'Hoàng Văn E', '0905678901', 'hve@example.com', N'Coi thi', 'mk123460');
-
-select * from NhanVien
+INSERT INTO NhanVien (MaNhanVien, HoTen, SDT, Email, VaiTro, MatKhauHash) VALUES
+('NV001', N'Nguyễn Văn A', '0901234567', 'nva@example.com', N'Tiếp nhận', '$2b$12$UA9x99BaLyb46uO89Rla0.DbJv51CFOCs6B4JMEh2tVeEujzTK27m'),
+('NV002', N'Trần Thị B', '0902345678', 'ttb@example.com', N'Kế Toán', '$2b$12$/DP0gzq4lTKywM1o76/b3ue/Lvu2KwwNp8HuR9qPmRxa0SMiDBKka'),
+('NV003', N'Lê Văn C', '0903456789', 'lvc@example.com', N'Tổ chức thi', '$2b$12$2SwiOEejNsVgcmwVT1kcq.g8qJfdM96QLvc9loooYXnM54d0G4zuC'),
+('NV004', N'Phạm Thị D', '0904567890', 'ptd@example.com', N'Nhập liệu', '$2b$12$kSiXoDNeM1gTLmxeMYDK6e40.6KfizAYMc2V4lpdLcnfXP/O3GF6S'),
+('NV005', N'Hoàng Văn E', '0905678901', 'hve@example.com', N'Coi thi', '$2b$12$sbu0iFfgb8EnhgkcLmMKAOTrFKOCjiETMqVQtc.IGaXw7KxzwGr9C');

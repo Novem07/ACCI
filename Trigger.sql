@@ -1,5 +1,5 @@
--- Use the database
-USE ACCI_DB;
+-- Run with sqlcmd variable DatabaseName, for example: -v DatabaseName=ACCI_DB
+USE [$(DatabaseName)];
 GO
 
 -- Xoá tất cả trigger nếu đã tồn tại
@@ -11,7 +11,7 @@ DROP TRIGGER IF EXISTS trg_check_role_ketoan_pg;
 DROP TRIGGER IF EXISTS trg_check_role_tiepnhan_lichthi;
 DROP TRIGGER IF EXISTS trg_check_role_tiepnhan_dk;
 DROP TRIGGER IF EXISTS trg_check_insert_saisot;
-DROP TRIGGER IF EXISTS trg_check_insert_dkgiahan
+DROP TRIGGER IF EXISTS trg_check_insert_dkgiahan;
 DROP TRIGGER IF EXISTS trg_check_machungchi_donvi;
 DROP TRIGGER IF EXISTS trg_check_lichthi_10_thisinh;
 DROP TRIGGER IF EXISTS trg_check_solan_vs_sophieu_dkgiahan;
