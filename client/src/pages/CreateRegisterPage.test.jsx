@@ -27,13 +27,12 @@ describe('CreateRegisterPage', () => {
     mocks.api.post.mockResolvedValue({ registration: { id: 'PDK000001' } });
   });
 
-  it('keeps the application shell visible while registration data loads', () => {
+  it('renders its loading content while registration data loads', () => {
     mocks.api.get.mockImplementation(() => new Promise(() => {}));
 
     render(<MemoryRouter><CreateRegisterPage /></MemoryRouter>);
 
     expect(screen.getByRole('status')).toHaveTextContent(/Đang tải dữ liệu/);
-    expect(screen.getByRole('link', { name: /ACCI CENTER/i })).toBeInTheDocument();
     expect(document.querySelector('.registration-loading')).toBeInTheDocument();
   });
 

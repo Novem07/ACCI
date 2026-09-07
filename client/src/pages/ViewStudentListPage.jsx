@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './ViewStudentListPage.css';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 import AsyncState from '../components/AsyncState';
 
 function ViewStudentListPage() {
@@ -17,8 +16,7 @@ function ViewStudentListPage() {
   }, []);
 
   return (
-    <AppShell>
-      <main className="student-page">
+    <main className="student-page">
         <h2>Danh sách thí sinh</h2>
         <AsyncState loading={loading} error={error} empty={!students.length && !loading && !error ? 'Chưa có thí sinh.' : ''}>
           <table className="student-table">
@@ -37,8 +35,7 @@ function ViewStudentListPage() {
         </tbody>
           </table>
         </AsyncState>
-      </main>
-    </AppShell>
+    </main>
   );
 }
 

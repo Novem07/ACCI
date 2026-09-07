@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './ProcessRegister.css';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} VND`;
@@ -44,12 +43,11 @@ const ProcessRegister = () => {
     }
   };
 
-  if (loading) return <AppShell><p>Đang tải thông tin thanh toán...</p></AppShell>;
+  if (loading) return <main className="page-wrapper"><p>Đang tải thông tin thanh toán...</p></main>;
   if (!quote || !payment) return <div className="page-wrapper"><p role="alert">{error || 'Không tìm thấy phiếu đăng ký.'}</p><button type="button" onClick={() => navigate('/ketoan')}>Quay lại</button></div>;
 
   return (
-    <AppShell>
-      <main className="invoice-wrapper">
+    <main className="invoice-wrapper">
         <form className="invoice" onSubmit={handleSubmit}>
           <h1>ACCI</h1>
           <h2>Hóa đơn đăng ký</h2>
@@ -82,8 +80,7 @@ const ProcessRegister = () => {
             </button>
           </div>
         </form>
-      </main>
-    </AppShell>
+    </main>
   );
 };
 

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ExtendRegisterPage.css';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 import AsyncState from '../components/AsyncState';
 
 function ExtendRegisterPage() {
@@ -27,8 +26,7 @@ function ExtendRegisterPage() {
   }, [data, searchTerm]);
 
   return (
-    <AppShell>
-      <main>
+    <main>
         <h2 className="title">Đăng ký gia hạn</h2>
         <div className="search-bar-row">
           <input
@@ -64,8 +62,7 @@ function ExtendRegisterPage() {
           </table>
           </div>
         </AsyncState>
-      </main>
-    </AppShell>
+    </main>
   );
 }
 

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './ExtendFormPage.css';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 
 function ExtendFormPage() {
   const { maPhieu } = useParams();
@@ -39,10 +38,10 @@ function ExtendFormPage() {
     }
   };
 
-  if (loading) return <AppShell><div className="extend-form-wrapper"><p role="status">Đang tải lịch thi...</p></div></AppShell>;
+  if (loading) return <div className="extend-form-wrapper"><p role="status">Đang tải lịch thi...</p></div>;
 
   return (
-    <AppShell><div className="extend-form-wrapper">
+    <div className="extend-form-wrapper">
       <form className="form-container" onSubmit={handleSubmit}>
         <h2 className="form-title">Tạo phiếu đăng ký gia hạn</h2>
         {error && <p role="alert" className="form-error">{error}</p>}
@@ -68,7 +67,7 @@ function ExtendFormPage() {
           <button className="btn-submit" type="submit" disabled={submitting || !schedules.length}>{submitting ? 'Đang gửi...' : 'Gửi yêu cầu'}</button>
         </div>
       </form>
-    </div></AppShell>
+    </div>
   );
 }
 

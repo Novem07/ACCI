@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 import AsyncState from '../components/AsyncState';
 
 function ViewExamForms() {
@@ -18,8 +17,7 @@ function ViewExamForms() {
   }, []);
 
   return (
-    <AppShell>
-      <main className="exam-form-page">
+    <main className="exam-form-page">
         <h2>Danh sách phiếu dự thi</h2>
         <AsyncState loading={loading} error={error} empty={!data.length && !loading && !error ? 'Chưa có phiếu dự thi.' : ''}>
           <table className="exam-form-table">
@@ -38,8 +36,7 @@ function ViewExamForms() {
         </tbody>
           </table>
         </AsyncState>
-      </main>
-    </AppShell>
+    </main>
   );
 }
 

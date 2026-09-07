@@ -3,7 +3,6 @@ import './ViewRegisterPage.css';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 import AsyncState from '../components/AsyncState';
 
 function ViewRegisterPage() {
@@ -28,8 +27,7 @@ function ViewRegisterPage() {
   }, [data, searchTerm]);
 
   return (
-    <AppShell>
-      <main className="accountant-container">
+    <main className="accountant-container">
         <h2>Danh sách phiếu đăng ký</h2>
         <div className="search-bar">
           <input
@@ -66,8 +64,7 @@ function ViewRegisterPage() {
           </table>
           </div>
         </AsyncState>
-      </main>
-    </AppShell>
+    </main>
   );
 }
 

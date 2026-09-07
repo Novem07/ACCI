@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CreateRegisterPage.css';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 import AsyncState from '../components/AsyncState';
 
 const emptyCustomer = {
@@ -127,12 +126,11 @@ function CreateRegisterPage() {
   };
 
   if (loading) {
-    return <AppShell><main className="registration-loading"><AsyncState loading /></main></AppShell>;
+    return <main className="registration-loading"><AsyncState loading /></main>;
   }
 
   return (
-    <AppShell>
-      <main className="form-container">
+    <main className="form-container">
         <h2>Tạo phiếu đăng ký mới</h2>
         {error && <p role="alert" className="form-error">{error}</p>}
 
@@ -199,8 +197,7 @@ function CreateRegisterPage() {
             {submitting ? 'Đang tạo...' : 'Tạo phiếu'}
           </button>
         </div>
-      </main>
-    </AppShell>
+    </main>
   );
 }
 

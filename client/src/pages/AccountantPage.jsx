@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './AccountantPage.css';
 import { useNavigate } from 'react-router-dom';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 import AsyncState from '../components/AsyncState';
 
 const itemsPerPage = 15;
@@ -40,8 +39,7 @@ const AccountantPage = () => {
   }, [currentPage, totalPages]);
 
   return (
-    <AppShell>
-      <main className="accountant-container">
+    <main className="accountant-container">
         <h2>Danh sách yêu cầu thanh toán</h2>
         <div className="search-bar">
           <input type="search" placeholder="Tìm theo mã PĐK, mã KH hoặc tên" value={searchTerm} onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }} />
@@ -86,8 +84,7 @@ const AccountantPage = () => {
           )}
           </div>
         </AsyncState>
-      </main>
-    </AppShell>
+    </main>
   );
 };
 

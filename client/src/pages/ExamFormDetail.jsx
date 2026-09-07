@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './ExamFormDetail.css';
 import { api, getErrorMessage } from '../api/client';
-import AppShell from '../components/AppShell';
 
 function ExamFormDetail() {
   const { id } = useParams();
@@ -16,11 +15,11 @@ function ExamFormDetail() {
       .catch((requestError) => setError(getErrorMessage(requestError, 'Không thể tải chi tiết phiếu dự thi.')));
   }, [id]);
 
-  if (error) return <AppShell><main className="exam-detail"><p role="alert">{error}</p><button type="button" onClick={() => navigate('/phieuduthi')}>Quay lại</button></main></AppShell>;
-  if (!info) return <AppShell><main className="exam-detail"><p role="status">Đang tải dữ liệu...</p></main></AppShell>;
+  if (error) return <main className="exam-detail"><p role="alert">{error}</p><button type="button" onClick={() => navigate('/phieuduthi')}>Quay lại</button></main>;
+  if (!info) return <main className="exam-detail"><p role="status">Đang tải dữ liệu...</p></main>;
 
   return (
-    <AppShell><main className="exam-detail">
+    <main className="exam-detail">
       <h2>Phiếu dự thi</h2>
       <p><b>Mã phiếu dự thi:</b> {info.examFormId}</p>
       <p><b>Mã thí sinh:</b> {info.candidateId}</p>
@@ -36,7 +35,7 @@ function ExamFormDetail() {
       <p><b>Lần gia hạn còn lại:</b> {info.remainingAttempts}</p>
       <p><b>Trạng thái:</b> {info.status}</p>
       <button type="button" onClick={() => navigate('/phieuduthi')}>Quay lại</button>
-    </main></AppShell>
+    </main>
   );
 }
 
