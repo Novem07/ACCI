@@ -1,32 +1,28 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import WarningModal from '../components/WarningModal';
+import { useAuth } from '../auth/AuthContext';
 
 function LoginPage() {
   const [maNhanVien, setMaNhanVien] = useState('');
   const [matKhau, setMatKhau] = useState('');  
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = async (event) => {
+    event.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/login', {
-        maNhanVien,
-        matKhau,
-      });
-
-      const user = res.data.user;
-      localStorage.setItem('user', JSON.stringify(user));
+      const user = await login({ employeeId: maNhanVien, password: matKhau });
 
       // Điều hướng theo vai trò
-      switch (user.vaiTro) {
+      switch (user.role) {
         case 'Tiếp nhận':
           navigate('/tiepnhan');
           break;
-        case 'Kế toán':
+        case 'Kế Toán':
           navigate('/ketoan');
           break;
         case 'Tổ chức thi':
@@ -39,7 +35,7 @@ function LoginPage() {
           navigate('/coithi');
           break;
         default:
-          alert('Vai trò không xác định!');
+          navigate('/home');
           break;
       }
     } catch {
@@ -54,9 +50,11 @@ function LoginPage() {
           <h1 className="logo-text">ACCI Center</h1>
           <p className="subtext">Đăng nhập vào hệ thống quản lý chứng chỉ</p>
 
+          <form onSubmit={handleLogin}>
           <div className="form-group">
-          <label>Mã nhân viên</label>
+          <label htmlFor="employee-id">Mã nhân viên</label>
           <input
+            id="employee-id"
             type="text"
             placeholder="Nhập mã nhân viên"
             value={maNhanVien}
@@ -65,15 +63,16 @@ function LoginPage() {
           </div>
 
           <div className="form-group password-group">
-            <label>Mật khẩu</label>
+            <label htmlFor="employee-password">Mật khẩu</label>
             <div className="password-wrapper">
               <input
+                id="employee-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Nhập mật khẩu"
                 value={matKhau}
                 onChange={(e) => setMatKhau(e.target.value)}
               />
-              <span className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
+              <button type="button" className="toggle-password" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
                   // 👁️ Mắt mở
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#777" viewBox="0 0 24 24">
@@ -98,12 +97,13 @@ function LoginPage() {
                     4.73L21 20.73 4.27 3z"/>
                   </svg>
                 )}
-              </span>
+              </button>
             </div>
           </div>
-          <button className="login-btn" onClick={handleLogin}>
+          <button className="login-btn" type="submit">
             Đăng nhập
           </button>
+          </form>
         </div>
 
         <div className="logo-side">

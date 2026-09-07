@@ -1,49 +1,45 @@
-// 📁 client/src/pages/ViewExamForms.jsx
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api, getErrorMessage } from '../api/client';
+import AppShell from '../components/AppShell';
+import AsyncState from '../components/AsyncState';
 
 function ViewExamForms() {
   const [data, setData] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/phieuduthi')
-      .then(res => res.json())
-      .then(setData)
-      .catch(err => console.error('Lỗi khi gọi API phiếu dự thi:', err));
+    api.get('/exam-forms?page=1&pageSize=100')
+      .then((result) => setData(result.items || []))
+      .catch((requestError) => setError(getErrorMessage(requestError, 'Không thể tải danh sách phiếu dự thi.')))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="exam-form-page">
-      <h2>Danh Sách Phiếu Dự Thi</h2>
-      <table className="exam-form-table">
-        <thead>
-          <tr>
-            <th>Mã PDT</th>
-            <th>Mã TS</th>
-            <th>Chứng chỉ</th>
-            <th>Trạng thái phiếu</th>
-          </tr>
-        </thead>
+    <AppShell>
+      <main className="exam-form-page">
+        <h2>Danh sách phiếu dự thi</h2>
+        <AsyncState loading={loading} error={error} empty={!data.length && !loading && !error ? 'Chưa có phiếu dự thi.' : ''}>
+          <table className="exam-form-table">
+        <thead><tr><th>Mã PDT</th><th>Mã TS</th><th>Chứng chỉ</th><th>Ngày thi</th><th>Trạng thái</th><th /></tr></thead>
         <tbody>
-          {data.map((row, i) => (
-            <tr key={i}>
-              <td>{row.MaPhieuDuThi}</td>
-              <td>{row.MaThiSinh}</td>
-              <td>{row.TenChungChi}</td>
-              <td>{row.TrangThaiPhieu}</td>
-              <td>
-                <button
-                    className="icon-button"
-                    title="Xem chi tiết"
-                    onClick={() => window.location.href = `/phieuduthi/${row.MaPhieuDuThi}`}
-                >
-                    🔍
-                </button>
-            </td>
+          {data.map((row) => (
+            <tr key={row.examFormId}>
+              <td>{row.examFormId}</td>
+              <td>{row.candidateId}</td>
+              <td>{row.certificateName || row.certificateId}</td>
+              <td>{row.examDate ? new Date(row.examDate).toLocaleDateString('vi-VN') : '—'}</td>
+              <td>{row.status}</td>
+              <td><button type="button" onClick={() => navigate(`/phieuduthi/${row.examFormId}`)}>Xem chi tiết</button></td>
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+          </table>
+        </AsyncState>
+      </main>
+    </AppShell>
   );
 }
 

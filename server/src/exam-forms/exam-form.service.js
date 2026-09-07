@@ -28,17 +28,22 @@ function createExamFormService({ db, transactionFactory }) {
           throw httpError(409, 'REGISTRATION_ALREADY_ISSUED', 'Phiếu đăng ký không còn ở trạng thái chờ phát hành.');
         }
 
+        const registrationDetails = await transaction.request()
+          .input('registrationId', sql.VarChar(20), input.registrationId)
+          .query(`
+            SELECT MaThiSinh AS candidateId, MaChungChi AS certificateId
+            FROM ChiTietPhieuDangKy WITH (UPDLOCK, HOLDLOCK)
+            WHERE MaPhieuDangKy = @registrationId
+          `);
+        const detailsByCandidate = new Map(registrationDetails.recordset.map((detail) => [detail.candidateId, detail]));
+        if (detailsByCandidate.size !== input.assignments.length) {
+          throw httpError(400, 'ASSIGNMENTS_INCOMPLETE', 'Phải gán lịch thi cho toàn bộ thí sinh trong phiếu đăng ký.');
+        }
+
         const issuedForms = [];
         for (const assignment of input.assignments) {
-          const detail = await transaction.request()
-            .input('registrationId', sql.VarChar(20), input.registrationId)
-            .input('candidateId', sql.VarChar(20), assignment.candidateId)
-            .query(`
-              SELECT MaThiSinh AS candidateId, MaChungChi AS certificateId
-              FROM ChiTietPhieuDangKy
-              WHERE MaPhieuDangKy = @registrationId AND MaThiSinh = @candidateId
-            `);
-          if (!detail.recordset[0]) throw httpError(400, 'CANDIDATE_NOT_IN_REGISTRATION', 'Thí sinh không thuộc phiếu đăng ký.');
+          const detail = detailsByCandidate.get(assignment.candidateId);
+          if (!detail) throw httpError(400, 'CANDIDATE_NOT_IN_REGISTRATION', 'Thí sinh không thuộc phiếu đăng ký.');
 
           const duplicate = await transaction.request()
             .input('registrationId', sql.VarChar(20), input.registrationId)
@@ -52,7 +57,7 @@ function createExamFormService({ db, transactionFactory }) {
 
           const schedule = await transaction.request()
             .input('scheduleId', sql.VarChar(20), assignment.scheduleId)
-            .input('certificateId', sql.VarChar(20), detail.recordset[0].certificateId)
+            .input('certificateId', sql.VarChar(20), detail.certificateId)
             .query(`
               SELECT MaLichThi AS scheduleId, MaChungChi AS certificateId,
                      NgayThi AS examDate, GioThi AS examTime, SoChoTrong AS remainingSeats
@@ -71,7 +76,7 @@ function createExamFormService({ db, transactionFactory }) {
             .input('remainingAttempts', sql.Int, 2)
             .input('status', sql.NVarChar(50), 'Đang xử lý')
             .input('candidateId', sql.VarChar(20), assignment.candidateId)
-            .input('certificateId', sql.VarChar(20), detail.recordset[0].certificateId)
+            .input('certificateId', sql.VarChar(20), detail.certificateId)
             .input('registrationId', sql.VarChar(20), input.registrationId)
             .input('userId', sql.VarChar(20), userId)
             .input('scheduleId', sql.VarChar(20), assignment.scheduleId)

@@ -1,86 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './ExtendFormPage.css';
+import { api, getErrorMessage } from '../api/client';
+import AppShell from '../components/AppShell';
 
 function ExtendFormPage() {
   const { maPhieu } = useParams();
   const navigate = useNavigate();
   const [caseType, setCaseType] = useState('');
-  const [lichThiMoi, setLichThiMoi] = useState('');
-  const [lichThiList, setLichThiList] = useState([]);
-
-  const user = JSON.parse(localStorage.getItem('user'));
+  const [scheduleId, setScheduleId] = useState('');
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/lichthi/giahan/${maPhieu}`)
-      .then(res => res.json())
-      .then(data => setLichThiList(data))
-      .catch(err => console.error('Lỗi khi lấy lịch thi phù hợp:', err));
+    api.get(`/extensions/${maPhieu}/extension-options`)
+      .then((result) => setSchedules(result.schedules || []))
+      .catch((requestError) => setError(getErrorMessage(requestError, 'Không thể tải lịch thi phù hợp.')))
+      .finally(() => setLoading(false));
   }, [maPhieu]);
 
-  const handleSubmit = () => {
-    if (!caseType || !lichThiMoi) {
-      alert('Vui lòng chọn trường hợp và lịch thi mới!');
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!caseType || !scheduleId) {
+      setError('Vui lòng chọn trường hợp và lịch thi mới.');
       return;
     }
-
-    fetch('http://localhost:5000/api/phieudangkygiahan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        maPhieuDuThi: maPhieu,
-        truongHop: caseType,
-        lichThiMoi,
-        nguoiTao: user.maNV
-      })
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'Tạo phiếu đăng ký gia hạn thành công!');
-        navigate('/giahan');
-      })
-      .catch(err => {
-        console.error('Lỗi khi tạo phiếu đăng ký gia hạn:', err);
-        alert('Có lỗi xảy ra khi gửi yêu cầu.');
-      });
+    setSubmitting(true);
+    setError('');
+    try {
+      await api.post('/extensions', { examFormId: maPhieu, caseType, newScheduleId: scheduleId });
+      navigate('/giahan');
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, 'Không thể tạo phiếu gia hạn.'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  if (loading) return <AppShell><div className="extend-form-wrapper"><p role="status">Đang tải lịch thi...</p></div></AppShell>;
+
   return (
-    <div className="extend-form-wrapper">
-      <div className="form-container">
+    <AppShell><div className="extend-form-wrapper">
+      <form className="form-container" onSubmit={handleSubmit}>
         <h2 className="form-title">Tạo phiếu đăng ký gia hạn</h2>
-  
-        <div>
-          <p>Chọn trường hợp</p>
+        {error && <p role="alert" className="form-error">{error}</p>}
+        <fieldset>
+          <legend>Chọn trường hợp</legend>
           <div className="case-options">
-            <label>
-              <input type="radio" name="case" value="Thường" onChange={e => setCaseType(e.target.value)} /> Thường
-            </label>
-            <label>
-              <input type="radio" name="case" value="Đặc biệt" onChange={e => setCaseType(e.target.value)} /> Đặc biệt
-            </label>
+            <label><input type="radio" name="case" value="Thường" checked={caseType === 'Thường'} onChange={(event) => setCaseType(event.target.value)} /> Thường</label>
+            <label><input type="radio" name="case" value="Đặc biệt" checked={caseType === 'Đặc biệt'} onChange={(event) => setCaseType(event.target.value)} /> Đặc biệt</label>
           </div>
-        </div>
-  
-        <div>
-          <p>Chọn lịch thi mới</p>
-          <select className="select-input" onChange={e => setLichThiMoi(e.target.value)} defaultValue="">
-            <option value="" disabled>-- Chọn lịch thi --</option>
-            {lichThiList.map(item => (
-              <option key={item.MaLichThi} value={item.MaLichThi}>
-                {item.NgayThi} - {item.GioThi} ({item.MaLichThi})
-              </option>
-            ))}
-          </select>
-        </div>
-  
+        </fieldset>
+        <label htmlFor="new-schedule">Chọn lịch thi mới</label>
+        <select id="new-schedule" className="select-input" value={scheduleId} onChange={(event) => setScheduleId(event.target.value)}>
+          <option value="">-- Chọn lịch thi --</option>
+          {schedules.map((item) => (
+            <option key={item.scheduleId} value={item.scheduleId}>
+              {item.examDate ? new Date(item.examDate).toLocaleDateString('vi-VN') : '—'} - {item.examTime} ({item.scheduleId}, còn {item.remainingSeats} chỗ)
+            </option>
+          ))}
+        </select>
+        {!schedules.length && <p>Không còn lịch thi phù hợp.</p>}
         <div className="form-buttons">
-          <button className="btn-cancel" onClick={() => navigate('/giahan')}>Hủy</button>
-          <button className="btn-submit" onClick={handleSubmit}>Tiếp tục</button>
+          <button className="btn-cancel" type="button" onClick={() => navigate('/giahan')}>Hủy</button>
+          <button className="btn-submit" type="submit" disabled={submitting || !schedules.length}>{submitting ? 'Đang gửi...' : 'Gửi yêu cầu'}</button>
         </div>
-      </div>
-    </div>
-  );  
+      </form>
+    </div></AppShell>
+  );
 }
 
 export default ExtendFormPage;

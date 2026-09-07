@@ -16,22 +16,24 @@ function createExtensionService({ db, transactionFactory, clock = () => new Date
   const makeTransaction = transactionFactory || (() => new sql.Transaction(db));
   return {
     async options(examFormId) {
-      const exam = await db.request()
-        .input('examFormId', sql.VarChar(20), examFormId)
-        .query(`
-          SELECT MaPhieuDuThi AS examFormId, MaChungChi AS certificateId
+        const exam = await db.request()
+          .input('examFormId', sql.VarChar(20), examFormId)
+          .query(`
+          SELECT MaPhieuDuThi AS examFormId, MaChungChi AS certificateId, MaLichThi AS currentScheduleId,
+                 SoLanGiaHanConLai AS remainingAttempts
           FROM PhieuDuThi
           WHERE MaPhieuDuThi = @examFormId
         `);
       if (!exam.recordset[0]) throw httpError(404, 'EXAM_FORM_NOT_FOUND', 'Không tìm thấy phiếu dự thi.');
       const schedules = await db.request()
         .input('certificateId', sql.VarChar(20), exam.recordset[0].certificateId)
+        .input('currentScheduleId', sql.VarChar(20), exam.recordset[0].currentScheduleId)
         .query(`
           SELECT MaLichThi AS scheduleId, NgayThi AS examDate, GioThi AS examTime,
                  ThoiGianThi AS duration, SoChoTrong AS remainingSeats,
                  MaChungChi AS certificateId, MaPhongThi AS roomId
           FROM LichThi
-          WHERE MaChungChi = @certificateId AND SoChoTrong > 0
+          WHERE MaChungChi = @certificateId AND MaLichThi <> @currentScheduleId AND SoChoTrong > 0
           ORDER BY NgayThi, GioThi, MaLichThi
         `);
       return { examFormId, schedules: schedules.recordset };
@@ -71,6 +73,9 @@ function createExtensionService({ db, transactionFactory, clock = () => new Date
         if (!next) throw httpError(400, 'SCHEDULE_NOT_FOUND', 'Không tìm thấy lịch thi mới.');
         if (next.certificateId !== current.certificateId) {
           throw httpError(400, 'CERTIFICATE_MISMATCH', 'Lịch thi mới không cùng loại chứng chỉ.');
+        }
+        if (next.scheduleId === current.currentScheduleId) {
+          throw httpError(409, 'SAME_SCHEDULE', 'Lịch thi mới phải khác lịch thi hiện tại.');
         }
         if (Number(next.remainingSeats) <= 0) {
           throw httpError(409, 'SCHEDULE_FULL', 'Lịch thi mới đã hết chỗ.');

@@ -1,0 +1,27 @@
+:root {
+  --acci-bg: #f4f6fb;
+  --acci-text: #1f2937;
+  --acci-primary: #264ab9;
+  --acci-surface: #fff;
+  --acci-border: #d7dce8;
+  --acci-focus: #f59e0b;
+  --acci-radius-sm: 0.35rem;
+  --acci-radius-md: 0.75rem;
+  --acci-space-1: 0.25rem;
+  --acci-space-2: 0.5rem;
+  --acci-space-3: 0.75rem;
+  --acci-space-4: 1rem;
+  --acci-space-6: 1.5rem;
+}
+
+html.dark {
+  --acci-bg: #182033;
+  --acci-text: #f3f4f6;
+  --acci-surface: #25304a;
+  --acci-border: #53617d;
+}
+
+:focus-visible {
+  outline: 3px solid var(--acci-focus);
+  outline-offset: 2px;
+}

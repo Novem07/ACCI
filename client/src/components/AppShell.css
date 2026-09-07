@@ -1,0 +1,80 @@
+@import '../styles/tokens.css';
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--acci-bg);
+  color: var(--acci-text);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: var(--acci-primary);
+  color: #fff;
+}
+
+.app-brand,
+.app-nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-brand {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.app-nav {
+  display: flex;
+  gap: 0.35rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.app-nav a,
+.app-actions button {
+  border-radius: var(--acci-radius-sm);
+  padding: 0.45rem 0.65rem;
+}
+
+.app-nav a:hover,
+.app-nav a.active,
+.app-nav a:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.app-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.app-actions button:hover,
+.app-actions button:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.app-content {
+  min-height: calc(100vh - 4rem);
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .app-nav,
+  .app-actions {
+    width: 100%;
+  }
+}

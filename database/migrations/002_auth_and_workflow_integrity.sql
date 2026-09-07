@@ -1,4 +1,3 @@
-:setvar DatabaseName ACCI_CI_SMOKE
 USE [$(DatabaseName)];
 GO
 
@@ -38,6 +37,37 @@ BEGIN
         FOREIGN KEY (MaChungChi) REFERENCES dbo.ChungChi(MaChungChi)
     );
 END;
+GO
+
+IF COL_LENGTH(N'dbo.PhieuDangKyGiaHan', N'LichThiMoi') IS NOT NULL
+BEGIN
+    EXEC(N'
+        UPDATE gh
+        SET MaLichThiMoi = scheduleMatch.MaLichThi
+        FROM dbo.PhieuDangKyGiaHan gh
+        CROSS APPLY (
+            SELECT TOP (1) l.MaLichThi
+            FROM dbo.LichThi l
+            WHERE l.NgayThi = gh.LichThiMoi
+              AND (SELECT COUNT(*) FROM dbo.LichThi sameDate WHERE sameDate.NgayThi = gh.LichThiMoi) = 1
+        ) scheduleMatch
+        WHERE gh.MaLichThiMoi IS NULL AND gh.LichThiMoi IS NOT NULL;
+    ');
+END;
+GO
+
+INSERT INTO dbo.ChiTietPhieuDangKy (MaPhieuDangKy, MaThiSinh, MaChungChi)
+SELECT p.MaPhieuDangKy, p.MaThiSinh, p.MaChungChi
+FROM dbo.PhieuDuThi p
+WHERE p.MaPhieuDangKy IS NOT NULL
+  AND p.MaThiSinh IS NOT NULL
+  AND p.MaChungChi IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1
+      FROM dbo.ChiTietPhieuDangKy existing
+      WHERE existing.MaPhieuDangKy = p.MaPhieuDangKy
+        AND existing.MaThiSinh = p.MaThiSinh
+  );
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_PDKGH_LichThiMoi')

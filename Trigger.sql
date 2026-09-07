@@ -27,8 +27,8 @@ BEGIN
     -- Chỉ nhân viên tổ chức thi mới được phép tạo
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Tổ chức thi'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Tổ chức thi'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên tổ chức thi mới được tạo phiếu dự thi.', 16, 1);
@@ -47,7 +47,13 @@ BEGIN
     END;
 
     -- Insert bình thường
-    INSERT INTO PhieuDuThi SELECT * FROM inserted;
+    INSERT INTO PhieuDuThi (
+        MaPhieuDuThi, SoBaoDanh, NgayThi, GioThi, SoLanGiaHanConLai,
+        TrangThaiPhieu, MaThiSinh, MaChungChi, MaPhieuDangKy, NguoiTao, MaLichThi
+    )
+    SELECT MaPhieuDuThi, SoBaoDanh, NgayThi, GioThi, SoLanGiaHanConLai,
+           TrangThaiPhieu, MaThiSinh, MaChungChi, MaPhieuDangKy, NguoiTao, MaLichThi
+    FROM inserted;
 END;
 GO
 
@@ -87,8 +93,8 @@ AS
 BEGIN
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Kế Toán'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Kế Toán'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên kế toán mới được tạo hóa đơn đăng ký.', 16, 1);
@@ -127,8 +133,8 @@ AS
 BEGIN
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Kế Toán'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Kế Toán'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên kế toán mới được tạo hóa đơn gia hạn.', 16, 1);
@@ -174,8 +180,8 @@ AS
 BEGIN
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Kế Toán'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Kế Toán'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên kế toán mới được tạo phiếu gia hạn.', 16, 1);
@@ -191,7 +197,9 @@ BEGIN
         RETURN;
     END
 
-    INSERT INTO PhieuGiaHan SELECT * FROM inserted;
+    INSERT INTO PhieuGiaHan (MaPhieuGiaHan, NgayLapPhieu, TrangThaiThanhToan, MaPhieuDangKyGiaHan, NguoiTao)
+    SELECT MaPhieuGiaHan, NgayLapPhieu, TrangThaiThanhToan, MaPhieuDangKyGiaHan, NguoiTao
+    FROM inserted;
 END;
 GO
 
@@ -203,15 +211,17 @@ AS
 BEGIN
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Tiếp nhận'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Tiếp nhận'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên tiếp nhận mới được tạo lịch thi.', 16, 1);
         RETURN;
     END
 
-    INSERT INTO LichThi SELECT * FROM inserted;
+    INSERT INTO LichThi (MaLichThi, NgayThi, GioThi, ThoiGianThi, SoChoTrong, MaChungChi, MaPhongThi, NguoiTao)
+    SELECT MaLichThi, NgayThi, GioThi, ThoiGianThi, SoChoTrong, MaChungChi, MaPhongThi, NguoiTao
+    FROM inserted;
 END;
 GO
 
@@ -223,15 +233,17 @@ AS
 BEGIN
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Tiếp nhận'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Tiếp nhận'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên tiếp nhận mới được tạo phiếu đăng ký.', 16, 1);
         RETURN;
     END
 
-    INSERT INTO PhieuDangKy SELECT * FROM inserted;
+    INSERT INTO PhieuDangKy (MaPhieuDangKy, NgayDangKy, TrangThaiPhieu, MaThanhToan, MaKhachHang, NguoiTao)
+    SELECT MaPhieuDangKy, NgayDangKy, TrangThaiPhieu, MaThanhToan, MaKhachHang, NguoiTao
+    FROM inserted;
 END;
 GO
 
@@ -329,8 +341,8 @@ BEGIN
     -- Kiểm tra vai trò
     IF EXISTS (
         SELECT 1 FROM inserted i
-        JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
-        WHERE nv.VaiTro != N'Nhập liệu'
+        LEFT JOIN NhanVien nv ON i.NguoiTao = nv.MaNhanVien
+        WHERE i.NguoiTao IS NULL OR nv.MaNhanVien IS NULL OR nv.VaiTro != N'Nhập liệu'
     )
     BEGIN
         RAISERROR(N'Chỉ nhân viên nhập liệu mới được tạo sai sót bài thi.', 16, 1);
@@ -347,7 +359,9 @@ BEGIN
         RETURN;
     END;
 
-    INSERT INTO SaiSotBaiThi SELECT * FROM inserted;
+    INSERT INTO SaiSotBaiThi (MaSaiSot, NoiDung, MaBaiThi, NguoiTao)
+    SELECT MaSaiSot, NoiDung, MaBaiThi, NguoiTao
+    FROM inserted;
 END;
 GO
 
@@ -368,6 +382,8 @@ BEGIN
         RETURN;
     END
 
-    INSERT INTO BaiThi SELECT * FROM inserted;
+    INSERT INTO BaiThi (MaBaiThi, MaChungChi, MaPhieuDuThi, MaDonVi)
+    SELECT MaBaiThi, MaChungChi, MaPhieuDuThi, MaDonVi
+    FROM inserted;
 END;
 GO

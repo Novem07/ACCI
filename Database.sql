@@ -212,12 +212,3 @@ CREATE TABLE QuyDinh (
     TenQuyDinh NVARCHAR(100),
     NoiDung NVARCHAR(200)
 );
-
-
--- data mẫu
-INSERT INTO NhanVien (MaNhanVien, HoTen, SDT, Email, VaiTro, MatKhauHash) VALUES
-('NV001', N'Nguyễn Văn A', '0901234567', 'nva@example.com', N'Tiếp nhận', '$2b$12$UA9x99BaLyb46uO89Rla0.DbJv51CFOCs6B4JMEh2tVeEujzTK27m'),
-('NV002', N'Trần Thị B', '0902345678', 'ttb@example.com', N'Kế Toán', '$2b$12$/DP0gzq4lTKywM1o76/b3ue/Lvu2KwwNp8HuR9qPmRxa0SMiDBKka'),
-('NV003', N'Lê Văn C', '0903456789', 'lvc@example.com', N'Tổ chức thi', '$2b$12$2SwiOEejNsVgcmwVT1kcq.g8qJfdM96QLvc9loooYXnM54d0G4zuC'),
-('NV004', N'Phạm Thị D', '0904567890', 'ptd@example.com', N'Nhập liệu', '$2b$12$kSiXoDNeM1gTLmxeMYDK6e40.6KfizAYMc2V4lpdLcnfXP/O3GF6S'),
-('NV005', N'Hoàng Văn E', '0905678901', 'hve@example.com', N'Coi thi', '$2b$12$sbu0iFfgb8EnhgkcLmMKAOTrFKOCjiETMqVQtc.IGaXw7KxzwGr9C');

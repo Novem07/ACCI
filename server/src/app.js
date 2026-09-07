@@ -16,6 +16,7 @@ const { createExtensionRouter } = require('./extensions/extension.routes');
 const { createExtensionService } = require('./extensions/extension.service');
 const { createExamFormRouter } = require('./exam-forms/exam-form.routes');
 const { createExamFormService } = require('./exam-forms/exam-form.service');
+const { createCatalogRouter } = require('./catalog/catalog.routes');
 
 function createApp({ db, config, services = {} } = {}) {
   const app = express();
@@ -72,6 +73,7 @@ function createApp({ db, config, services = {} } = {}) {
       service: services.examForm || createExamFormService({ db }),
       authService,
     }));
+    app.use('/api/catalog', createCatalogRouter({ db, authService }));
   }
 
   app.use(errorHandler);

@@ -1,215 +1,203 @@
-import React, { useEffect, useState } from 'react';
-import './CreateRegisterPage.css';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './CreateRegisterPage.css';
+import { api, getErrorMessage } from '../api/client';
+import AppShell from '../components/AppShell';
+
+const emptyCustomer = {
+  fullName: '',
+  organization: '',
+  citizenId: '',
+  phone: '',
+  email: '',
+  address: '',
+};
+
+const emptyCandidate = {
+  fullName: '',
+  certificateId: '',
+  citizenId: '',
+  phone: '',
+  email: '',
+  address: '',
+};
 
 function CreateRegisterPage() {
   const navigate = useNavigate();
-  const [maKhachHangList, setMaKhachHangList] = useState([]);
-  const [maChungChiList, setMaChungChiList] = useState([]);
-
-  const [selectedMaKH, setSelectedMaKH] = useState('');
-  const [khachHangInfo, setKhachHangInfo] = useState({
-    hoTen: '', donVi: '', cccd: '', sdt: '', email: '', diaChi: ''
-  });
-
-  const [thiSinhInfo, setThiSinhInfo] = useState({
-    hoTen: '', maChungChi: '', cccd: '', sdt: '', email: '', diaChi: ''
-  });
-  const [thiSinhList, setThiSinhList] = useState([]);
-
-  const user = JSON.parse(localStorage.getItem('user'));
+  const [customers, setCustomers] = useState([]);
+  const [certificates, setCertificates] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customer, setCustomer] = useState(emptyCustomer);
+  const [candidate, setCandidate] = useState(emptyCandidate);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [customerMessage, setCustomerMessage] = useState('');
 
   useEffect(() => {
-    // Lấy danh sách khách hàng
-    fetch('http://localhost:5000/api/khachhang')
-      .then(res => res.text())
-      .then(text => {
-        if (!text) return;
-        const data = JSON.parse(text);
-        setMaKhachHangList(data);
+    let active = true;
+    Promise.all([api.get('/customers'), api.get('/catalog/certificates')])
+      .then(([customerResult, certificateResult]) => {
+        if (!active) return;
+        setCustomers(customerResult.customers || []);
+        setCertificates(certificateResult.certificates || []);
       })
-      .catch(err => console.error('❌ Lỗi lấy danh sách KH:', err));
-
-    // Lấy danh sách chứng chỉ
-    fetch('http://localhost:5000/api/chungchi')
-      .then(res => res.text())
-      .then(text => {
-        if (!text) return;
-        const data = JSON.parse(text);
-        setMaChungChiList(data);
+      .catch((requestError) => {
+        if (active) setError(getErrorMessage(requestError, 'Không thể tải dữ liệu đăng ký.'));
       })
-      .catch(err => console.error('❌ Lỗi lấy danh sách chứng chỉ:', err));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
-  const handleSelectKH = async (maKH) => {
-    setSelectedMaKH(maKH);
-    if (!maKH) {
-      setKhachHangInfo({ hoTen: '', donVi: '', cccd: '', sdt: '', email: '', diaChi: '' });
-      return;
-    }
+  const selectedCertificate = useMemo(
+    () => certificates.find((item) => item.id === candidate.certificateId),
+    [certificates, candidate.certificateId],
+  );
 
-    try {
-      const res = await fetch(`http://localhost:5000/api/khachhang/${maKH}`);
-      const text = await res.text();
-      if (!res.ok || !text) throw new Error('Không có dữ liệu');
-      const data = JSON.parse(text);
-      setKhachHangInfo({
-        hoTen: data.HoTen || '',
-        donVi: data.DonVi || '',
-        cccd: data.CCCD || '',
-        sdt: data.SDT || '',
-        email: data.Email || '',
-        diaChi: data.DiaChi || ''
+  const handleCustomerChange = (event) => {
+    const id = event.target.value;
+    setSelectedCustomerId(id);
+    const selected = customers.find((item) => item.MaKhachHang === id || item.id === id);
+    if (selected) {
+      setCustomer({
+        fullName: selected.HoTen || selected.fullName || '',
+        organization: selected.DonVi || selected.organization || '',
+        citizenId: selected.CCCD || selected.citizenId || '',
+        phone: selected.SDT || selected.phone || '',
+        email: selected.Email || selected.email || '',
+        address: selected.DiaChi || selected.address || '',
       });
-    } catch (err) {
-      alert('Không thể load khách hàng: ' + err.message);
-      console.error(err);
     }
   };
 
-  const handleAddKH = async () => {
+  const handleCustomerSubmit = async (event) => {
+    event.preventDefault();
+    setCustomerMessage('');
     try {
-      const res = await fetch('http://localhost:5000/api/khachhang', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(khachHangInfo)
-      });
-      const text = await res.text();
-      const result = text ? JSON.parse(text) : {};
-      alert(result.message || 'Đã thêm khách hàng');
-    } catch (err) {
-      alert('Lỗi khi thêm khách hàng');
-      console.error(err);
+      const result = await api.post('/customers', customer);
+      const created = result.customer;
+      setCustomers((current) => [...current, created]);
+      setSelectedCustomerId(created.id);
+      setCustomerMessage(`Đã thêm khách hàng ${created.id}.`);
+    } catch (requestError) {
+      setCustomerMessage(getErrorMessage(requestError, 'Không thể thêm khách hàng.'));
     }
   };
 
-  const handleAddThiSinh = () => {
-    const { hoTen, maChungChi, cccd, sdt, email, diaChi } = thiSinhInfo;
-    if (!hoTen || !maChungChi || !cccd || !sdt || !email || !diaChi) {
-      alert('Vui lòng điền đầy đủ thông tin thí sinh');
+  const handleCandidateSubmit = (event) => {
+    event.preventDefault();
+    if (!candidate.certificateId) {
+      setError('Vui lòng chọn chứng chỉ cho thí sinh.');
       return;
     }
-  
-    const updatedList = [...thiSinhList, thiSinhInfo];
-    setThiSinhList(updatedList);
-    localStorage.setItem('tempThiSinhList', JSON.stringify(updatedList)); // 👈 Lưu vào localStorage
-  
-    setThiSinhInfo({ hoTen: '', maChungChi: '', cccd: '', sdt: '', email: '', diaChi: '' });
+    setCandidates((current) => [...current, candidate]);
+    setCandidate(emptyCandidate);
+    setError('');
   };
-  
 
-  const handleSubmit = async () => {
-    if (!selectedMaKH) {
-      alert('Vui lòng chọn hoặc thêm khách hàng!');
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedCustomerId) {
+      setError('Vui lòng chọn hoặc thêm khách hàng.');
+      return;
+    }
+    if (candidates.length === 0) {
+      setError('Vui lòng thêm ít nhất một thí sinh.');
       return;
     }
 
+    setSubmitting(true);
+    setError('');
     try {
-      const resPDK = await fetch('http://localhost:5000/api/phieudangky', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          MaKhachHang: selectedMaKH,
-          NguoiTao: user.maNV,
-          TrangThaiPhieu: 'Chờ phát hành',
-          NgayDangKy: new Date().toISOString().split('T')[0]
-        })
+      await api.post('/registrations', {
+        customerId: selectedCustomerId,
+        registrationDate: new Date().toISOString().slice(0, 10),
+        candidates,
       });
-
-      const text = await resPDK.text();
-      const result = text ? JSON.parse(text) : {};
-      const maPhieuDangKy = result.maPhieuDangKy;
-
-      for (const ts of thiSinhList) {
-        await fetch('http://localhost:5000/api/phieuduthi', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...ts, MaPhieuDangKy: maPhieuDangKy })
-        });
-      }
-
-      alert('Tạo phiếu đăng ký thành công!');
       navigate('/tiepnhan');
-    } catch (err) {
-      alert('Lỗi khi tạo phiếu đăng ký');
-      console.error(err);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, 'Không thể tạo phiếu đăng ký.'));
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  if (loading) return <div className="page-wrapper"><p>Đang tải dữ liệu...</p></div>;
 
   return (
-    <div className="page-wrapper">
-      <nav className="navbar">
-        <div className="logo">ACCI</div>
-        <div className="nav-links">
-          <span className="active">Đăng ký thi</span>
-          <span className="disabled">Thanh toán</span>
-          <span className="disabled" onClick={() => navigate('/giahan')}>Gia hạn thi</span>
-          <span className="disabled">Tra cứu</span>
-        </div>
-        <div className="nav-search-user">
-          <input type="text" placeholder="Tìm kiếm" />
-          <span className="user-icon">👤 {user.name}</span>
-          <span className="logout-icon" onClick={() => navigate('/login')}>↩</span>
-        </div>
-      </nav>
+    <AppShell>
+      <main className="form-container">
+        <h2>Tạo phiếu đăng ký mới</h2>
+        {error && <p role="alert" className="form-error">{error}</p>}
 
-      <div className="form-container">
-        <h2>Tạo Phiếu Đăng Ký Mới</h2>
-
-        {/* Thông tin khách hàng */}
-        <div className="form-section">
+        <form className="form-section" onSubmit={handleCustomerSubmit}>
           <h4>Thông tin khách hàng</h4>
-          <select value={selectedMaKH} onChange={e => handleSelectKH(e.target.value)}>
+          <label htmlFor="customer-select">Khách hàng đã có</label>
+          <select id="customer-select" value={selectedCustomerId} onChange={handleCustomerChange}>
             <option value="">-- Chọn mã khách hàng --</option>
-            {maKhachHangList.map(kh => (
-              <option key={kh.MaKhachHang} value={kh.MaKhachHang}>
-                {kh.MaKhachHang}
+            {customers.map((item) => (
+              <option key={item.MaKhachHang || item.id} value={item.MaKhachHang || item.id}>
+                {item.MaKhachHang || item.id} - {item.HoTen || item.fullName}
               </option>
             ))}
           </select>
           <div className="input-row">
-            <input placeholder="Họ tên khách hàng" value={khachHangInfo.hoTen} onChange={e => setKhachHangInfo({ ...khachHangInfo, hoTen: e.target.value })} />
-            <input placeholder="Đơn vị" value={khachHangInfo.donVi} onChange={e => setKhachHangInfo({ ...khachHangInfo, donVi: e.target.value })} />
+            <input required placeholder="Họ tên khách hàng" value={customer.fullName} onChange={(event) => setCustomer({ ...customer, fullName: event.target.value })} />
+            <input required placeholder="Đơn vị hoặc Không" value={customer.organization} onChange={(event) => setCustomer({ ...customer, organization: event.target.value })} />
           </div>
           <div className="input-row">
-            <input placeholder="CCCD" value={khachHangInfo.cccd} onChange={e => setKhachHangInfo({ ...khachHangInfo, cccd: e.target.value })} />
-            <input placeholder="SĐT" value={khachHangInfo.sdt} onChange={e => setKhachHangInfo({ ...khachHangInfo, sdt: e.target.value })} />
-            <input placeholder="Email" value={khachHangInfo.email} onChange={e => setKhachHangInfo({ ...khachHangInfo, email: e.target.value })} />
+            <input placeholder="CCCD" value={customer.citizenId} onChange={(event) => setCustomer({ ...customer, citizenId: event.target.value })} />
+            <input required placeholder="SĐT" value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} />
+            <input required type="email" placeholder="Email" value={customer.email} onChange={(event) => setCustomer({ ...customer, email: event.target.value })} />
           </div>
-          <input placeholder="Địa chỉ" value={khachHangInfo.diaChi} onChange={e => setKhachHangInfo({ ...khachHangInfo, diaChi: e.target.value })} />
-          <button className="btn btn-black" onClick={handleAddKH}>Thêm khách hàng</button>
-        </div>
+          <input required placeholder="Địa chỉ" value={customer.address} onChange={(event) => setCustomer({ ...customer, address: event.target.value })} />
+          <button className="btn btn-black" type="submit">Thêm khách hàng</button>
+          {customerMessage && <p role="status">{customerMessage}</p>}
+        </form>
 
-        {/* Thông tin thí sinh */}
-        <div className="form-section">
+        <form className="form-section" onSubmit={handleCandidateSubmit}>
           <h4>Thông tin thí sinh</h4>
           <div className="input-row">
-            <input placeholder="Họ tên thí sinh" value={thiSinhInfo.hoTen} onChange={e => setThiSinhInfo({ ...thiSinhInfo, hoTen: e.target.value })} />
-            <select value={thiSinhInfo.maChungChi} onChange={e => setThiSinhInfo({ ...thiSinhInfo, maChungChi: e.target.value })}>
+            <input required placeholder="Họ tên thí sinh" value={candidate.fullName} onChange={(event) => setCandidate({ ...candidate, fullName: event.target.value })} />
+            <select required value={candidate.certificateId} onChange={(event) => setCandidate({ ...candidate, certificateId: event.target.value })}>
               <option value="">-- Chọn chứng chỉ --</option>
-              {maChungChiList.map(cc => (
-                <option key={cc.MaChungChi} value={cc.MaChungChi}>
-                  {cc.TenChungChi}
-                </option>
-              ))}
+              {certificates.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.id})</option>)}
             </select>
           </div>
           <div className="input-row">
-            <input placeholder="CCCD" value={thiSinhInfo.cccd} onChange={e => setThiSinhInfo({ ...thiSinhInfo, cccd: e.target.value })} />
-            <input placeholder="SĐT" value={thiSinhInfo.sdt} onChange={e => setThiSinhInfo({ ...thiSinhInfo, sdt: e.target.value })} />
-            <input placeholder="Email" value={thiSinhInfo.email} onChange={e => setThiSinhInfo({ ...thiSinhInfo, email: e.target.value })} />
+            <input required placeholder="CCCD" value={candidate.citizenId} onChange={(event) => setCandidate({ ...candidate, citizenId: event.target.value })} />
+            <input required placeholder="SĐT" value={candidate.phone} onChange={(event) => setCandidate({ ...candidate, phone: event.target.value })} />
+            <input required type="email" placeholder="Email" value={candidate.email} onChange={(event) => setCandidate({ ...candidate, email: event.target.value })} />
           </div>
-          <input placeholder="Địa chỉ" value={thiSinhInfo.diaChi} onChange={e => setThiSinhInfo({ ...thiSinhInfo, diaChi: e.target.value })} />
-          <button className="btn btn-blue" onClick={handleAddThiSinh}>Thêm thí sinh</button>
-        </div>
+          <input required placeholder="Địa chỉ" value={candidate.address} onChange={(event) => setCandidate({ ...candidate, address: event.target.value })} />
+          {selectedCertificate && <small>Chứng chỉ: {selectedCertificate.name}</small>}
+          <button className="btn btn-blue" type="submit">Thêm thí sinh</button>
+        </form>
+
+        <section className="form-section" aria-labelledby="candidate-list-title">
+          <h4 id="candidate-list-title">Danh sách thí sinh ({candidates.length})</h4>
+          {candidates.length === 0 ? <p>Chưa có thí sinh nào.</p> : (
+            <ul>
+              {candidates.map((item, index) => (
+                <li key={`${item.citizenId}-${index}`}>
+                  {item.fullName} — {certificates.find((certificate) => certificate.id === item.certificateId)?.name || item.certificateId}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <div className="button-group">
-          <button className="btn btn-red" onClick={() => navigate('/tiepnhan')}>Hủy</button>
-          <button className="btn btn-gray" onClick={() => navigate('/xemtempthisinh')}>Xem danh sách thí sinh</button>
-          <button className="btn btn-green" onClick={handleSubmit}>Tiếp tục</button>
+          <button className="btn btn-red" type="button" onClick={() => navigate('/tiepnhan')}>Hủy</button>
+          <button className="btn btn-green" type="button" disabled={submitting} onClick={handleSubmit}>
+            {submitting ? 'Đang tạo...' : 'Tạo phiếu'}
+          </button>
         </div>
-      </div>
-    </div>
+      </main>
+    </AppShell>
   );
 }
 

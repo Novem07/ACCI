@@ -1,6 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import { expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import App from './App';
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: false, status: 401, text: async () => '' })));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 test('renders the login form at the root route', () => {
   window.history.pushState({}, '', '/');

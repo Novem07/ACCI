@@ -14,7 +14,8 @@ function createCustomerService({ db }) {
   return {
     async list() {
       const result = await db.request().query(`
-        SELECT MaKhachHang, HoTen, CCCD, SDT, Email, DiaChi, DonVi
+        SELECT MaKhachHang AS id, HoTen AS fullName, CCCD AS citizenId,
+               SDT AS phone, Email AS email, DiaChi AS address, DonVi AS organization
         FROM KhachHang
         ORDER BY MaKhachHang
       `);
@@ -23,9 +24,10 @@ function createCustomerService({ db }) {
 
     async get(customerId) {
       const result = await db.request()
-        .input('customerId', sql.VarChar(20), customerId)
-        .query(`
-          SELECT MaKhachHang, HoTen, CCCD, SDT, Email, DiaChi, DonVi
+          .input('customerId', sql.VarChar(20), customerId)
+          .query(`
+          SELECT MaKhachHang AS id, HoTen AS fullName, CCCD AS citizenId,
+                 SDT AS phone, Email AS email, DiaChi AS address, DonVi AS organization
           FROM KhachHang
           WHERE MaKhachHang = @customerId
         `);

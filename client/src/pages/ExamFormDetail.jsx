@@ -1,35 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './ExamFormDetail.css';
+import { api, getErrorMessage } from '../api/client';
+import AppShell from '../components/AppShell';
 
 function ExamFormDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [info, setInfo] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/phieuduthi/${id}`)
-      .then(res => res.json())
-      .then(setInfo)
-      .catch(err => console.error('Lỗi khi tải chi tiết phiếu:', err));
+    api.get(`/exam-forms/${id}`)
+      .then((result) => setInfo(result.examForm))
+      .catch((requestError) => setError(getErrorMessage(requestError, 'Không thể tải chi tiết phiếu dự thi.')));
   }, [id]);
 
-  if (!info) return <div>Không tìm thấy dữ liệu cho mã phiếu: {id}</div>;
+  if (error) return <AppShell><main className="exam-detail"><p role="alert">{error}</p><button type="button" onClick={() => navigate('/phieuduthi')}>Quay lại</button></main></AppShell>;
+  if (!info) return <AppShell><main className="exam-detail"><p role="status">Đang tải dữ liệu...</p></main></AppShell>;
 
   return (
-    <div className="exam-detail">
-      <h2>Phiếu Dự Thi</h2>
-      <p><b>Mã phiếu dự thi:</b> {info.MaPhieuDuThi}</p>
-      <p><b>Họ tên thí sinh:</b> {info.HoTen}</p>
-      <p><b>CCCD:</b> {info.CCCD}</p>
-      <p><b>SDT:</b> {info.SDT}</p>
-      <p><b>Email:</b> {info.Email}</p>
-      <p><b>Địa chỉ:</b> {info.DiaChi}</p>
-      <p><b>Số báo danh:</b> {info.SoBaoDanh}</p>
-      <p><b>Chứng chỉ:</b> {info.TenChungChi}</p>
-      <p><b>Ngày thi:</b> {info.NgayThi}</p>
-      <p><b>Giờ thi:</b> {info.GioThi}</p>
-      <p><b>Số lần gia hạn còn lại:</b> {info.SoLanGiaHanConLai}</p>
-    </div>
+    <AppShell><main className="exam-detail">
+      <h2>Phiếu dự thi</h2>
+      <p><b>Mã phiếu dự thi:</b> {info.examFormId}</p>
+      <p><b>Mã thí sinh:</b> {info.candidateId}</p>
+      <p><b>Họ tên thí sinh:</b> {info.candidateName}</p>
+      <p><b>CCCD:</b> {info.citizenId}</p>
+      <p><b>SĐT:</b> {info.phone}</p>
+      <p><b>Email:</b> {info.email}</p>
+      <p><b>Địa chỉ:</b> {info.address}</p>
+      <p><b>Chứng chỉ:</b> {info.certificateName}</p>
+      <p><b>Lịch thi:</b> {info.scheduleId}</p>
+      <p><b>Ngày thi:</b> {info.examDate ? new Date(info.examDate).toLocaleDateString('vi-VN') : '—'}</p>
+      <p><b>Giờ thi:</b> {info.examTime}</p>
+      <p><b>Lần gia hạn còn lại:</b> {info.remainingAttempts}</p>
+      <p><b>Trạng thái:</b> {info.status}</p>
+      <button type="button" onClick={() => navigate('/phieuduthi')}>Quay lại</button>
+    </main></AppShell>
   );
 }
 
