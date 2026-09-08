@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" fill="none">
-  <path d="M0 64V0h64v64H0Zm18-18.5h7.1l2-6.1h9.7l2 6.1H46L35.8 17h-7.6L18 45.5Zm11.2-12.2 2.8-8.4 2.7 8.4h-5.5Z" fill="#17233B"/>
-  <text x="80" y="31" fill="#17233B" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="-.8">ACCI</text>
-  <text x="81" y="48" fill="#17233B" font-family="Arial, sans-serif" font-size="11" font-weight="700" letter-spacing="3">CENTER</text>
+  <defs><linearGradient id="a" x1="10" y1="7" x2="56" y2="59" gradientUnits="userSpaceOnUse"><stop stop-color="#9CB9FF"/><stop offset="1" stop-color="#5D87F5"/></linearGradient></defs>
+  <rect width="64" height="64" rx="18" fill="url(#a)"/>
+  <path d="M17.5 46 28.3 17.5h7.4L46.5 46h-7.1l-2.1-6.2h-10.6L24.6 46h-7.1Zm11.2-12.3h6.5L32 24.1l-3.3 9.6Z" fill="#fff"/>
+  <path d="m29.1 35.1 2.8 2.8 7.1-7.2" stroke="#EAF0FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="80" y="31" fill="#fff" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="-.8">ACCI</text>
+  <text x="81" y="48" fill="#BFD1FF" font-family="Arial, sans-serif" font-size="11" font-weight="700" letter-spacing="3">CENTER</text>
 </svg>

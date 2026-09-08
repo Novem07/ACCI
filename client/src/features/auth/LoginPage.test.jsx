@@ -30,3 +30,17 @@ it('shows failed login inline without opening a dialog', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Sai tài khoản hoặc mật khẩu');
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
+
+it('exposes the password visibility state while toggling the field', async () => {
+  render(<MemoryRouter><LoginPage /></MemoryRouter>);
+  const password = screen.getByLabelText(/Mật khẩu/);
+  const toggle = screen.getByRole('button', { name: 'Hiện mật khẩu' });
+
+  expect(password).toHaveAttribute('type', 'password');
+  expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+  await userEvent.click(toggle);
+
+  expect(password).toHaveAttribute('type', 'text');
+  expect(screen.getByRole('button', { name: 'Ẩn mật khẩu' })).toHaveAttribute('aria-pressed', 'true');
+});
