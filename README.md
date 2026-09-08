@@ -113,4 +113,4 @@ Authentication is a short-lived JWT in the HttpOnly `acci_session` cookie. The b
 
 ## Further documentation
 
-The audit and implementation plan are in `docs/superpowers/`.
+The approved design and implementation handoff are in `docs/superpowers/`.

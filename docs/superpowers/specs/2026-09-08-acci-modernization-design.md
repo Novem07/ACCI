@@ -165,7 +165,7 @@ Create focused primitives with documented props and tests:
 - Brand: `BrandLogo` and `BrandMark`.
 - Actions: `Button`, `IconButton`, and `LinkButton` with primary, secondary, quiet, and danger variants.
 - Forms: `FormField`, `TextInput`, `Select`, and `RadioGroup` with label, hint, required, invalid, and disabled states.
-- Feedback: `Alert`, `ToastRegion`, `LoadingState`, `EmptyState`, and an accessible `Dialog` replacing `WarningModal`.
+- Feedback: `Alert`, `LoadingState`, and `EmptyState`; confirmation dialogs and toasts remain deferred until a workflow needs them.
 - Layout: `Page`, `PageHeader`, `Section`, `Card`, and `Stack`.
 - Data: `DataTable`, `StatusBadge`, `Pagination`, and `SearchToolbar`.
 
