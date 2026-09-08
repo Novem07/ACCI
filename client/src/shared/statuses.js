@@ -14,7 +14,7 @@ export const PAYMENT_STATUS = Object.freeze({
 });
 
 export const EXAM_FORM_STATUS = Object.freeze({
-  'Chờ xếp lịch': status('Chờ xếp lịch', 'warning'),
-  'Đã xếp lịch': status('Đã xếp lịch', 'success'),
-  'Đã hủy': status('Đã hủy', 'danger'),
+  'Đang xử lý': status('Đang xử lý', 'warning'),
+  'Đã xử lý': status('Đã xử lý', 'success'),
+  'Đã phát': status('Đã phát', 'success'),
 });
