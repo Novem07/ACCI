@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import RoleRoute from '../auth/RoleRoute';
-import AccountantPage from '../pages/AccountantPage';
 import ExamFormDetail from '../pages/ExamFormDetail';
 import ExtendFormPage from '../pages/ExtendFormPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
@@ -13,6 +12,7 @@ import ViewExamForms from '../pages/ViewExamForms';
 import RegistrationListPage from '../features/registrations/RegistrationListPage';
 import CreateRegistrationPage from '../features/registrations/CreateRegistrationPage';
 import CandidateListPage from '../features/candidates/CandidateListPage';
+import PaymentQueuePage from '../features/payments/PaymentQueuePage';
 import ViewTempThisinh from '../pages/ViewTempThisinh';
 import AppShellLayout from './AppShellLayout';
 import { PATHS, ROLES } from './routes';
@@ -37,7 +37,7 @@ function AppRoutes() {
           <Route path={PATHS.temporaryCandidates} element={<ViewTempThisinh />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.accounting]} />}>
-          <Route path={PATHS.accounting} element={<AccountantPage />} />
+          <Route path={PATHS.accounting} element={<PaymentQueuePage />} />
           <Route path={PATHS.accountingProcess} element={<ProcessRegister />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.reception, ROLES.accounting, ROLES.examOrganization]} />}>

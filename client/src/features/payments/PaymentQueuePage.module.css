@@ -1,0 +1,4 @@
+.filterLabel { display: grid; gap: var(--space-1); color: var(--color-text-primary); font-weight: 600; }
+.pagination { display: flex; justify-content: flex-end; margin-top: var(--space-4); }
+.muted, .receipt { color: var(--color-text-secondary); font-size: .8125rem; }.action { color: var(--color-action-primary); font-weight: 700; text-decoration: none; }.action:hover { text-decoration: underline; }
+@media (max-width: 560px) { .pagination { justify-content: stretch; } }

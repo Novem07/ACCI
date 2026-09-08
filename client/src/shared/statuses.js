@@ -9,9 +9,8 @@ export const REGISTRATION_STATUS = Object.freeze({
 });
 
 export const PAYMENT_STATUS = Object.freeze({
-  'Chờ thanh toán': status('Chờ thanh toán', 'warning'),
-  'Đã thanh toán': status('Đã thanh toán', 'success'),
-  'Đã hủy': status('Đã hủy', 'danger'),
+  unpaid: status('Chờ thanh toán', 'warning'),
+  paid: status('Đã thanh toán', 'success'),
 });
 
 export const EXAM_FORM_STATUS = Object.freeze({
