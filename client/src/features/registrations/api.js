@@ -18,3 +18,19 @@ export async function listRegistrations(params, { signal } = {}) {
     totalPages: response?.totalPages ?? (items.length ? 1 : 0),
   };
 }
+
+export async function listCertificates({ signal } = {}) {
+  const response = await request('/catalog/certificates', { signal });
+  return response?.certificates ?? [];
+}
+
+export async function createRegistration({ customerId, candidates }) {
+  const response = await request('/registrations', {
+    method: 'POST',
+    body: {
+      customerId,
+      candidates: candidates.map(({ clientId, ...candidate }) => candidate),
+    },
+  });
+  return response.registration;
+}

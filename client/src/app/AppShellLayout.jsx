@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import Icon from '../components/Icon';
 import BrandLogo from '../ui/brand/BrandLogo';
 import { PATHS, navigationByRole } from './routes';
+import { UnsavedChangesProvider, useUnsavedChanges } from './UnsavedChangesContext';
 import styles from './AppShellLayout.module.css';
 
 function getInitialTheme() {
@@ -14,6 +15,7 @@ export function AppShellFrame({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isDirty } = useUnsavedChanges();
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState(getInitialTheme);
   const menuButton = useRef(null);
@@ -32,15 +34,22 @@ export function AppShellFrame({ children }) {
   }, [open]);
 
   const closeMenu = () => setOpen(false);
+  const guardNavigation = (event) => {
+    if (isDirty && !window.confirm('Các thay đổi chưa lưu sẽ bị mất. Bạn muốn rời trang?')) {
+      event.preventDefault();
+      return;
+    }
+    closeMenu();
+  };
   const handleLogout = async () => { await logout().catch(() => undefined); navigate(PATHS.login); };
   return <div className={styles.shell} data-testid="app-shell">
     <button className={`${styles.scrim} ${open ? styles.scrimVisible : ''}`} type="button" tabIndex={open ? 0 : -1} aria-label="Đóng điều hướng" onClick={closeMenu} />
     <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`} aria-label="Không gian làm việc">
-      <NavLink className={styles.brand} to={PATHS.home} onClick={closeMenu} aria-label="ACCI Center, về tổng quan"><BrandLogo compact decorative /><span>ACCI<small>CENTER</small></span></NavLink>
+      <NavLink className={styles.brand} to={PATHS.home} onClick={guardNavigation} aria-label="ACCI Center, về tổng quan"><BrandLogo compact decorative /><span>ACCI<small>CENTER</small></span></NavLink>
       <p className={styles.caption}>KHÔNG GIAN LÀM VIỆC</p>
       <nav className={styles.navigation} aria-label="Điều hướng chính">
-        <NavLink end to={PATHS.home} onClick={closeMenu}><Icon name="grid" /><span>Tổng quan</span></NavLink>
-        {links.map((link) => <NavLink end key={link.to} to={link.to} onClick={closeMenu}><Icon name={link.icon} /><span>{link.label}</span></NavLink>)}
+        <NavLink end to={PATHS.home} onClick={guardNavigation}><Icon name="grid" /><span>Tổng quan</span></NavLink>
+        {links.map((link) => <NavLink end key={link.to} to={link.to} onClick={guardNavigation}><Icon name={link.icon} /><span>{link.label}</span></NavLink>)}
       </nav>
       <div className={styles.roleNote}><span className={styles.roleDot} />{user?.role}<small>Hệ thống quản lý chứng chỉ</small></div>
     </aside>
@@ -56,4 +65,6 @@ export function AppShellFrame({ children }) {
   </div>;
 }
 
-export default function AppShellLayout() { return <AppShellFrame><Outlet /></AppShellFrame>; }
+export default function AppShellLayout() {
+  return <UnsavedChangesProvider><AppShellFrame><Outlet /></AppShellFrame></UnsavedChangesProvider>;
+}

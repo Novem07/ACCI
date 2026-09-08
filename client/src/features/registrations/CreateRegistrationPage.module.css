@@ -1,0 +1,5 @@
+.stack { display: grid; gap: var(--space-5); padding-bottom: 6rem; }
+.stack h2 { margin: 0 0 var(--space-4); font-size: 1.05rem; }
+.summary { position: sticky; bottom: var(--space-3); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-surface) 94%, transparent); box-shadow: var(--shadow-lg); backdrop-filter: blur(12px); }
+.summary div:first-child { display: grid; gap: var(--space-1); }.summary span { color: var(--color-text-secondary); font-size: .875rem; }
+@media (max-width: 560px) { .summary { align-items: stretch; flex-direction: column; }.summary :global(.inlineActions) { display: grid; grid-template-columns: 1fr 1fr; }.summary :global(.inlineActions button) { width: 100%; } }

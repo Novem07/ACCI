@@ -3,7 +3,6 @@ import { BrowserRouter, MemoryRouter, Navigate, Route, Routes } from 'react-rout
 import ProtectedRoute from '../auth/ProtectedRoute';
 import RoleRoute from '../auth/RoleRoute';
 import AccountantPage from '../pages/AccountantPage';
-import CreateRegisterPage from '../pages/CreateRegisterPage';
 import ExamFormDetail from '../pages/ExamFormDetail';
 import ExtendFormPage from '../pages/ExtendFormPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
@@ -12,6 +11,7 @@ import LoginPage from '../features/auth/LoginPage';
 import ProcessRegister from '../pages/ProcessRegister';
 import ViewExamForms from '../pages/ViewExamForms';
 import RegistrationListPage from '../features/registrations/RegistrationListPage';
+import CreateRegistrationPage from '../features/registrations/CreateRegistrationPage';
 import ViewStudentListPage from '../pages/ViewStudentListPage';
 import ViewTempThisinh from '../pages/ViewTempThisinh';
 import AppShellLayout from './AppShellLayout';
@@ -31,7 +31,7 @@ function AppRoutes() {
         <Route path={PATHS.home} element={<HomePage />} />
         <Route element={<RoleRoute roles={[ROLES.reception]} />}>
           <Route path={PATHS.registrations} element={<RegistrationListPage />} />
-          <Route path={PATHS.registrationCreate} element={<CreateRegisterPage />} />
+          <Route path={PATHS.registrationCreate} element={<CreateRegistrationPage />} />
           <Route path={PATHS.extensions} element={<ExtendRegisterPage />} />
           <Route path={PATHS.extensionCreate} element={<ExtendFormPage />} />
           <Route path={PATHS.temporaryCandidates} element={<ViewTempThisinh />} />
