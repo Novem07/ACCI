@@ -4,6 +4,7 @@ import ProtectedRoute from '../auth/ProtectedRoute';
 import RoleRoute from '../auth/RoleRoute';
 import ExamFormDetail from '../pages/ExamFormDetail';
 import ExtendFormPage from '../pages/ExtendFormPage';
+import CreateExtensionPage from '../features/extensions/CreateExtensionPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/LoginPage';
@@ -33,7 +34,7 @@ function AppRoutes() {
           <Route path={PATHS.registrations} element={<RegistrationListPage />} />
           <Route path={PATHS.registrationCreate} element={<CreateRegistrationPage />} />
           <Route path={PATHS.extensions} element={<ExtendRegisterPage />} />
-          <Route path={PATHS.extensionCreate} element={<ExtendFormPage />} />
+          <Route path={PATHS.extensionCreate} element={<CreateExtensionPage />} />
           <Route path={PATHS.temporaryCandidates} element={<ViewTempThisinh />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.accounting]} />}>
