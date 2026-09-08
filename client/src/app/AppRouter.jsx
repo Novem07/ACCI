@@ -12,7 +12,7 @@ import ProcessRegister from '../pages/ProcessRegister';
 import ViewExamForms from '../pages/ViewExamForms';
 import RegistrationListPage from '../features/registrations/RegistrationListPage';
 import CreateRegistrationPage from '../features/registrations/CreateRegistrationPage';
-import ViewStudentListPage from '../pages/ViewStudentListPage';
+import CandidateListPage from '../features/candidates/CandidateListPage';
 import ViewTempThisinh from '../pages/ViewTempThisinh';
 import AppShellLayout from './AppShellLayout';
 import { PATHS, ROLES } from './routes';
@@ -41,7 +41,7 @@ function AppRoutes() {
           <Route path={PATHS.accountingProcess} element={<ProcessRegister />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.reception, ROLES.accounting, ROLES.examOrganization]} />}>
-          <Route path={PATHS.candidates} element={<ViewStudentListPage />} />
+          <Route path={PATHS.candidates} element={<CandidateListPage />} />
           <Route path={PATHS.examForms} element={<ViewExamForms />} />
           <Route path={PATHS.examFormDetail} element={<ExamFormDetail />} />
         </Route>
