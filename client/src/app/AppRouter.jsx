@@ -10,6 +10,7 @@ import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/LoginPage';
 import PaymentCheckoutPage from '../features/payments/PaymentCheckoutPage';
 import ViewExamForms from '../pages/ViewExamForms';
+import ExamFormListPage from '../features/exam-forms/ExamFormListPage';
 import RegistrationListPage from '../features/registrations/RegistrationListPage';
 import CreateRegistrationPage from '../features/registrations/CreateRegistrationPage';
 import CandidateListPage from '../features/candidates/CandidateListPage';
@@ -43,7 +44,7 @@ function AppRoutes() {
         </Route>
         <Route element={<RoleRoute roles={[ROLES.reception, ROLES.accounting, ROLES.examOrganization]} />}>
           <Route path={PATHS.candidates} element={<CandidateListPage />} />
-          <Route path={PATHS.examForms} element={<ViewExamForms />} />
+          <Route path={PATHS.examForms} element={<ExamFormListPage />} />
           <Route path={PATHS.examFormDetail} element={<ExamFormDetail />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.examOrganization]} />}><Route path={PATHS.examOrganization} element={<UnavailablePage title="Tổ chức thi" />} /></Route>
