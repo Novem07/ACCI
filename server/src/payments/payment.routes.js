@@ -39,6 +39,14 @@ function createPaymentRouter({ service, authService }) {
     }
   });
 
+  router.get('/:registrationId/checkout', accountant, async (req, res, next) => {
+    try {
+      res.json(await service.getCheckout(req.params.registrationId));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post('/:registrationId/invoices', accountant, async (req, res, next) => {
     const parsed = invoiceSchema.safeParse(req.body);
     if (!parsed.success) {

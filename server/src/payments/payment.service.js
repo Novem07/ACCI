@@ -1,8 +1,9 @@
 const { sql } = require('../db');
 const { httpError } = require('../errors');
 const { formatId } = require('../customers/customer.service');
+const { toBusinessDate } = require('../domain/date');
 
-async function quoteQuery(target, registrationId) {
+async function checkoutQuery(target, registrationId) {
   const result = await target.request()
     .input('registrationId', sql.VarChar(20), registrationId)
     .query(`
@@ -14,14 +15,21 @@ async function quoteQuery(target, registrationId) {
              kh.SDT AS customerPhone,
              kh.DonVi AS organization,
              COUNT(ct.MaThiSinh) AS candidateCount,
-             COALESCE(SUM(CAST(cc.Gia AS DECIMAL(12,2))), 0) AS baseAmount
+             COALESCE(SUM(CAST(cc.Gia AS DECIMAL(12,2))), 0) AS baseAmount,
+             hd.MaHoaDon AS invoiceId,
+             hd.TongTien AS totalAmount,
+             hd.PhuongThucThanhToan AS paymentMethod,
+             hd.NgayLapHoaDon AS invoiceDate,
+             hd.TrangThaiThanhToan AS paymentStatus
       FROM PhieuDangKy p
       JOIN KhachHang kh ON kh.MaKhachHang = p.MaKhachHang
       LEFT JOIN ChiTietPhieuDangKy ct ON ct.MaPhieuDangKy = p.MaPhieuDangKy
       LEFT JOIN ChungChi cc ON cc.MaChungChi = ct.MaChungChi
+      LEFT JOIN HoaDonDangKy hd ON hd.MaPhieuDangKy = p.MaPhieuDangKy
       WHERE p.MaPhieuDangKy = @registrationId
       GROUP BY p.MaPhieuDangKy, p.MaKhachHang, p.NgayDangKy,
-               p.TrangThaiPhieu, kh.HoTen, kh.SDT, kh.DonVi
+               p.TrangThaiPhieu, kh.HoTen, kh.SDT, kh.DonVi,
+               hd.MaHoaDon, hd.TongTien, hd.PhuongThucThanhToan, hd.NgayLapHoaDon, hd.TrangThaiThanhToan
     `);
   const row = result.recordset[0];
   if (!row) throw httpError(404, 'REGISTRATION_NOT_FOUND', 'Không tìm thấy phiếu đăng ký.');
@@ -31,7 +39,7 @@ async function quoteQuery(target, registrationId) {
   const isOrganization = row.organization !== 'Không';
   const discountRate = isOrganization ? (candidateCount > 20 ? 0.15 : 0.10) : 0;
   const discountAmount = Math.round(baseAmount * discountRate);
-  return {
+  const quote = {
     registrationId: row.registrationId,
     customerId: row.customerId,
     customerName: row.customerName,
@@ -45,6 +53,28 @@ async function quoteQuery(target, registrationId) {
     discountAmount,
     totalAmount: baseAmount - discountAmount,
   };
+  return {
+    payment: {
+      registrationId: row.registrationId,
+      customerId: row.customerId,
+      customerName: row.customerName,
+      customerPhone: row.customerPhone,
+      organization: row.organization,
+      registrationDate: row.registrationDate,
+      registrationStatus: row.registrationStatus,
+      invoiceId: row.invoiceId || null,
+      totalAmount: row.totalAmount === null || row.totalAmount === undefined ? null : Math.round(Number(row.totalAmount)),
+      paymentMethod: row.paymentMethod || null,
+      invoiceDate: row.invoiceDate || null,
+      paymentStatus: row.paymentStatus || null,
+      status: row.invoiceId ? 'paid' : 'unpaid',
+    },
+    quote,
+  };
+}
+
+async function quoteQuery(target, registrationId) {
+  return (await checkoutQuery(target, registrationId)).quote;
 }
 
 async function nextInvoiceId(target) {
@@ -52,7 +82,7 @@ async function nextInvoiceId(target) {
   return formatId('HD', result.recordset[0].value);
 }
 
-function createPaymentService({ db, transactionFactory }) {
+function createPaymentService({ db, transactionFactory, clock = () => new Date() }) {
   const makeTransaction = transactionFactory || (() => new sql.Transaction(db));
   return {
     async list({ page, pageSize, query, status }) {
@@ -105,32 +135,15 @@ function createPaymentService({ db, transactionFactory }) {
     },
 
     async get(registrationId) {
-      const result = await db.request()
-        .input('registrationId', sql.VarChar(20), registrationId)
-        .query(`
-          SELECT p.MaPhieuDangKy AS registrationId,
-                 p.MaKhachHang AS customerId,
-                 p.MaThanhToan AS invoiceId,
-                 p.NgayDangKy AS registrationDate,
-                 p.TrangThaiPhieu AS registrationStatus,
-                 kh.HoTen AS customerName,
-                 kh.SDT AS customerPhone,
-                 kh.DonVi AS organization,
-                 hd.TongTien AS totalAmount,
-                 hd.PhuongThucThanhToan AS paymentMethod,
-                 hd.NgayLapHoaDon AS invoiceDate,
-                 hd.TrangThaiThanhToan AS paymentStatus
-          FROM PhieuDangKy p
-          JOIN KhachHang kh ON kh.MaKhachHang = p.MaKhachHang
-          LEFT JOIN HoaDonDangKy hd ON hd.MaPhieuDangKy = p.MaPhieuDangKy
-          WHERE p.MaPhieuDangKy = @registrationId
-        `);
-      if (!result.recordset[0]) throw httpError(404, 'REGISTRATION_NOT_FOUND', 'Không tìm thấy phiếu đăng ký.');
-      return result.recordset[0];
+      return (await checkoutQuery(db, registrationId)).payment;
     },
 
     async quote(registrationId) {
       return quoteQuery(db, registrationId);
+    },
+
+    async getCheckout(registrationId) {
+      return checkoutQuery(db, registrationId);
     },
 
     async createInvoice({ registrationId, input, userId }) {
@@ -139,7 +152,11 @@ function createPaymentService({ db, transactionFactory }) {
       try {
         await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
         started = true;
-        const quote = await quoteQuery(transaction, registrationId);
+        const { quote } = await checkoutQuery(transaction, registrationId);
+        const latestInvoiceDate = toBusinessDate(clock());
+        if (input.invoiceDate < quote.registrationDate || input.invoiceDate > latestInvoiceDate) {
+          throw httpError(400, 'INVOICE_DATE_OUT_OF_RANGE', 'Ngày lập hóa đơn phải nằm trong khoảng từ ngày đăng ký đến hôm nay.');
+        }
         const existing = await transaction.request()
           .input('registrationId', sql.VarChar(20), registrationId)
           .query('SELECT TOP 1 MaHoaDon FROM HoaDonDangKy WITH (UPDLOCK, HOLDLOCK) WHERE MaPhieuDangKy = @registrationId');
@@ -148,7 +165,7 @@ function createPaymentService({ db, transactionFactory }) {
         }
 
         const invoiceId = await nextInvoiceId(transaction);
-        const invoiceDate = input.invoiceDate || new Date().toISOString().slice(0, 10);
+        const invoiceDate = input.invoiceDate;
         await transaction.request()
           .input('invoiceId', sql.VarChar(20), invoiceId)
           .input('registrationId', sql.VarChar(20), registrationId)
@@ -181,4 +198,4 @@ function createPaymentService({ db, transactionFactory }) {
   };
 }
 
-module.exports = { createPaymentService, quoteQuery };
+module.exports = { createPaymentService, quoteQuery, checkoutQuery };

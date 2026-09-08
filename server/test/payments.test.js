@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const request = require('supertest');
 
 const { createApp } = require('../src/app');
+const { createPaymentService } = require('../src/payments/payment.service');
 
 const config = {
   nodeEnv: 'test',
@@ -42,6 +43,12 @@ test('payment routes use registrationId and return a canonical quote', async () 
     async quote(registrationId) {
       return { registrationId, baseAmount: 1000000, discountAmount: 150000, totalAmount: 850000, currency: 'VND' };
     },
+    async getCheckout(registrationId) {
+      return {
+        payment: { registrationId, customerId: 'KH000001', status: 'unpaid', invoiceId: null },
+        quote: { registrationId, currency: 'VND', baseAmount: 1000000, discountAmount: 150000, totalAmount: 850000 },
+      };
+    },
     async createInvoice({ registrationId, userId }) {
       return { invoiceId: 'HD000001', registrationId, createdBy: userId };
     },
@@ -68,10 +75,15 @@ test('payment routes use registrationId and return a canonical quote', async () 
   assert.equal(quote.body.quote.registrationId, 'PDK000001');
   assert.equal(quote.body.quote.totalAmount, 850000);
 
+  const checkout = await request(app).get('/api/payments/PDK000001/checkout').set('Cookie', cookie);
+  assert.equal(checkout.status, 200);
+  assert.equal(checkout.body.payment.registrationId, 'PDK000001');
+  assert.equal(checkout.body.quote.currency, 'VND');
+
   const invoice = await request(app)
     .post('/api/payments/PDK000001/invoices')
     .set('Cookie', cookie)
-    .send({ paymentMethod: 'Tiền mặt' });
+    .send({ paymentMethod: 'Tiền mặt', invoiceDate: '2026-09-08' });
   assert.equal(invoice.status, 201);
   assert.equal(invoice.body.invoice.registrationId, 'PDK000001');
   assert.equal(invoice.body.invoice.createdBy, 'NV002');
@@ -86,4 +98,40 @@ test('payment routes reject non-accountants and caller-owned status fields', asy
     .set('Cookie', login.headers['set-cookie'])
     .send({ paymentMethod: 'Tiền mặt', status: 'Đã thanh toán' });
   assert.equal(response.status, 403);
+});
+
+test('payment service rejects invoice dates outside the registration-to-today range', async () => {
+  const queries = [];
+  const transaction = {
+    begin: async () => undefined,
+    request() {
+      const current = {
+        input() { return current; },
+        async query(statement) {
+          queries.push(statement);
+          if (statement.includes('FROM PhieuDangKy p')) {
+            return { recordset: [{
+              registrationId: 'PDK000001', customerId: 'KH000001', customerName: 'Nguyễn Văn A', customerPhone: '0901234567',
+              registrationDate: '2030-05-06', registrationStatus: 'Chờ phát hành', organization: 'Không', candidateCount: 1, baseAmount: 100000,
+            }] };
+          }
+          return { recordset: [] };
+        },
+      };
+      return current;
+    },
+    commit: async () => undefined,
+    rollback: async () => undefined,
+  };
+  const service = createPaymentService({ db: {}, transactionFactory: () => transaction, clock: () => new Date('2030-05-10T08:00:00Z') });
+
+  await assert.rejects(
+    service.createInvoice({ registrationId: 'PDK000001', input: { paymentMethod: 'Tiền mặt', invoiceDate: '2030-05-05' }, userId: 'NV002' }),
+    { code: 'INVOICE_DATE_OUT_OF_RANGE', status: 400 }
+  );
+  await assert.rejects(
+    service.createInvoice({ registrationId: 'PDK000001', input: { paymentMethod: 'Tiền mặt', invoiceDate: '2030-05-11' }, userId: 'NV002' }),
+    { code: 'INVOICE_DATE_OUT_OF_RANGE', status: 400 }
+  );
+  assert.equal(queries.some((statement) => statement.includes('INSERT INTO HoaDonDangKy')), false);
 });
