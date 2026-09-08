@@ -1,14 +1,9 @@
 const express = require('express');
 
 const { issueExamFormsSchema } = require('./exam-form.schema');
+const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
-
-function positiveInt(value, fallback) {
-  if (value === undefined) return fallback;
-  const parsed = Number(value);
-  return Number.isInteger(parsed) ? parsed : NaN;
-}
 
 function createExamFormRouter({ service, authService }) {
   const router = express.Router();
@@ -17,14 +12,10 @@ function createExamFormRouter({ service, authService }) {
   const organizer = requireRole('Tổ chức thi');
 
   router.get('/', staff, async (req, res, next) => {
-    const page = positiveInt(req.query.page, 1);
-    const pageSize = positiveInt(req.query.pageSize, 20);
-    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'page/pageSize không hợp lệ.' } });
-      return;
-    }
     try {
-      res.json(await service.list({ page, pageSize, query: String(req.query.query || '').trim() }));
+      const { page, pageSize, query } = parsePagination(req.query);
+      const pageResult = await service.list({ page, pageSize, query });
+      res.json(toPageResponse(pageResult, 'examForms'));
     } catch (error) {
       next(error);
     }

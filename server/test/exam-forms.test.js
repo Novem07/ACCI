@@ -48,10 +48,20 @@ test('exam-form issuance is organizer-only and returns stable IDs', async () => 
   assert.equal(forbidden.status, 403);
 });
 
-test('exam-form list validates page size before querying', async () => {
-  const service = { async list() { throw new Error('must not query'); } };
+test('exam-form list validates page size and returns the common page shape', async () => {
+  const items = [{ examFormId: 'PDT000001' }];
+  const service = {
+    async list(params) {
+      assert.deepEqual(params, { page: 1, pageSize: 20, query: '' });
+      return { items, page: 1, pageSize: 20, totalItems: 1, totalPages: 1 };
+    },
+  };
   const app = createApp({ db: authDb('Tổ chức thi'), config, services: { examForm: service } });
   const login = await request(app).post('/api/auth/login').send({ employeeId: 'NV003', password: 'correct-password' });
   const response = await request(app).get('/api/exam-forms?pageSize=101').set('Cookie', login.headers['set-cookie']);
   assert.equal(response.status, 400);
+  const page = await request(app).get('/api/exam-forms?page=1&pageSize=20').set('Cookie', login.headers['set-cookie']);
+  assert.equal(page.status, 200);
+  assert.deepEqual(page.body.items, items);
+  assert.deepEqual(page.body.examForms, items);
 });
