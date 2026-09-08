@@ -1,0 +1,3 @@
+import { request } from '../../api/client';
+export async function listExamForms({ page = 1, pageSize = 20, query = '' }, { signal } = {}) { const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) }); if (query) params.set('query', query); const response = await request(`/exam-forms?${params}`, { signal }); const items = response.items ?? response.examForms ?? []; return { items, page: response.page ?? page, pageSize: response.pageSize ?? pageSize, totalItems: response.totalItems ?? items.length, totalPages: response.totalPages ?? (items.length ? 1 : 0) }; }
+export async function getExamForm(id, { signal } = {}) { return (await request(`/exam-forms/${id}`, { signal })).examForm; }
