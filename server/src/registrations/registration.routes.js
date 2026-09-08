@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { registrationSchema } = require('./registration.schema');
+const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 
@@ -12,7 +13,9 @@ function createRegistrationRouter({ service, authService }) {
 
   router.get('/', staff, async (req, res, next) => {
     try {
-      res.json({ registrations: await service.list() });
+      const pagination = parsePagination(req.query);
+      const page = await service.list(pagination);
+      res.json(toPageResponse(page, 'registrations'));
     } catch (error) {
       next(error);
     }

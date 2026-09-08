@@ -12,14 +12,41 @@ async function nextId(db, sequenceName, prefix) {
 
 function createCustomerService({ db }) {
   return {
-    async list() {
-      const result = await db.request().query(`
+    async list({ page, pageSize, query }) {
+      const offset = (page - 1) * pageSize;
+      const search = `%${query.replace(/[\\%_\[]/g, '\\$&')}%`;
+      const bindFilters = (request) => request
+        .input('query', sql.NVarChar(100), query)
+        .input('search', sql.NVarChar(202), search);
+      const whereClause = `
+        WHERE (@query = N'' OR MaKhachHang LIKE @search ESCAPE '\\'
+          OR HoTen LIKE @search ESCAPE '\\' OR SDT LIKE @search ESCAPE '\\')
+      `;
+
+      const countResult = await bindFilters(db.request()).query(`
+        SELECT COUNT_BIG(*) AS totalItems
+        FROM KhachHang
+        ${whereClause}
+      `);
+      const totalItems = Number(countResult.recordset[0].totalItems);
+      const result = await bindFilters(db.request())
+        .input('offset', sql.Int, offset)
+        .input('pageSize', sql.Int, pageSize)
+        .query(`
         SELECT MaKhachHang AS id, HoTen AS fullName, CCCD AS citizenId,
                SDT AS phone, Email AS email, DiaChi AS address, DonVi AS organization
         FROM KhachHang
+        ${whereClause}
         ORDER BY MaKhachHang
+        OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
       `);
-      return result.recordset;
+      return {
+        items: result.recordset,
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      };
     },
 
     async get(customerId) {

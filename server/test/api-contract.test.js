@@ -35,7 +35,10 @@ test('reception contract creates a customer and registration, then cannot access
   const customers = [];
   const registrations = [];
   const customerService = {
-    async list() { return customers; },
+    async list({ page, pageSize, query }) {
+      assert.deepEqual({ page, pageSize, query }, { page: 1, pageSize: 20, query: '' });
+      return { items: customers, page, pageSize, totalItems: customers.length, totalPages: 1 };
+    },
     async create(input) {
       const customer = { id: 'KH000001', ...input };
       customers.push(customer);
@@ -43,7 +46,10 @@ test('reception contract creates a customer and registration, then cannot access
     },
   };
   const registrationService = {
-    async list() { return registrations; },
+    async list({ page, pageSize, query, status }) {
+      assert.deepEqual({ page, pageSize, query, status }, { page: 2, pageSize: 10, query: 'PDK', status: 'Chờ phát hành' });
+      return { items: registrations, page, pageSize, totalItems: 14, totalPages: 2 };
+    },
     async create({ input, userId }) {
       const registration = {
         id: 'PDK000001',
@@ -81,6 +87,10 @@ test('reception contract creates a customer and registration, then cannot access
   const listResponse = await request(app).get('/api/customers').set('Cookie', cookie);
   assert.equal(listResponse.status, 200);
   assert.equal(listResponse.body.customers.length, 1);
+  assert.deepEqual(listResponse.body.items, customers);
+  assert.deepEqual({ page: listResponse.body.page, pageSize: listResponse.body.pageSize, totalItems: listResponse.body.totalItems, totalPages: listResponse.body.totalPages }, {
+    page: 1, pageSize: 20, totalItems: 1, totalPages: 1,
+  });
 
   const registrationResponse = await request(app)
     .post('/api/registrations')
@@ -96,8 +106,18 @@ test('reception contract creates a customer and registration, then cannot access
   assert.equal(registrationResponse.status, 201);
   assert.equal(registrationResponse.body.registration.id, 'PDK000001');
 
-  const registrationsResponse = await request(app).get('/api/registrations').set('Cookie', cookie);
+  const registrationsResponse = await request(app)
+    .get('/api/registrations?page=2&pageSize=10&query=PDK&status=Ch%E1%BB%9D%20ph%C3%A1t%20h%C3%A0nh')
+    .set('Cookie', cookie);
   assert.equal(registrationsResponse.status, 200);
   assert.equal(registrationsResponse.body.registrations[0].id, 'PDK000001');
+  assert.deepEqual(registrationsResponse.body.items, registrations);
+  assert.deepEqual({ page: registrationsResponse.body.page, pageSize: registrationsResponse.body.pageSize, totalItems: registrationsResponse.body.totalItems, totalPages: registrationsResponse.body.totalPages }, {
+    page: 2, pageSize: 10, totalItems: 14, totalPages: 2,
+  });
+
+  const invalidPagination = await request(app).get('/api/customers?pageSize=101').set('Cookie', cookie);
+  assert.equal(invalidPagination.status, 400);
+  assert.equal(invalidPagination.body.error.code, 'VALIDATION_ERROR');
   assert.equal((await request(app).get('/api/payments').set('Cookie', cookie)).status, 403);
 });

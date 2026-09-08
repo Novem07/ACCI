@@ -86,17 +86,45 @@ function createRegistrationService({ db, transactionFactory }) {
       }
     },
 
-    async list() {
-      const result = await db.request().query(`
+    async list({ page, pageSize, query, status }) {
+      const offset = (page - 1) * pageSize;
+      const search = `%${query.replace(/[\\%_\[]/g, '\\$&')}%`;
+      const bindFilters = (request) => request
+        .input('query', sql.NVarChar(100), query)
+        .input('search', sql.NVarChar(202), search)
+        .input('status', sql.NVarChar(50), status);
+      const whereClause = `
+        WHERE (@query = N'' OR p.MaPhieuDangKy LIKE @search ESCAPE '\\'
+          OR p.MaKhachHang LIKE @search ESCAPE '\\')
+          AND (@status = N'' OR p.TrangThaiPhieu = @status)
+      `;
+      const countResult = await bindFilters(db.request()).query(`
+        SELECT COUNT_BIG(*) AS totalItems
+        FROM PhieuDangKy p
+        ${whereClause}
+      `);
+      const totalItems = Number(countResult.recordset[0].totalItems);
+      const result = await bindFilters(db.request())
+        .input('offset', sql.Int, offset)
+        .input('pageSize', sql.Int, pageSize)
+        .query(`
         SELECT p.MaPhieuDangKy AS id, p.NgayDangKy AS registrationDate,
                p.TrangThaiPhieu AS status, p.MaKhachHang AS customerId,
                p.NguoiTao AS createdBy, COUNT(c.MaThiSinh) AS candidateCount
         FROM PhieuDangKy p
         LEFT JOIN ChiTietPhieuDangKy c ON c.MaPhieuDangKy = p.MaPhieuDangKy
+        ${whereClause}
         GROUP BY p.MaPhieuDangKy, p.NgayDangKy, p.TrangThaiPhieu, p.MaKhachHang, p.NguoiTao
         ORDER BY p.NgayDangKy DESC, p.MaPhieuDangKy DESC
+        OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
       `);
-      return result.recordset;
+      return {
+        items: result.recordset,
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      };
     },
   };
 }

@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { customerSchema } = require('./customer.schema');
+const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 
@@ -10,7 +11,9 @@ function createCustomerRouter({ service, authService }) {
 
   router.get('/', requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi'), async (req, res, next) => {
     try {
-      res.json({ customers: await service.list() });
+      const pagination = parsePagination(req.query);
+      const page = await service.list(pagination);
+      res.json(toPageResponse(page, 'customers'));
     } catch (error) {
       next(error);
     }

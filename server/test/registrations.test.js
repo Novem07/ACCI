@@ -39,7 +39,7 @@ test('registration API returns a server-owned state and identity', async () => {
         candidateCount: input.candidates.length, createdBy: userId,
       };
     },
-    async list() { return []; },
+    async list() { return { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 0 }; },
   };
   const app = createApp({ db: authDb(), config, services: { registration: registrationService } });
   const login = await request(app).post('/api/auth/login').send({ employeeId: 'NV001', password: 'correct-password' });
@@ -117,4 +117,33 @@ test('registration route requires reception role', async () => {
   app.use(express.json());
   app.post('/registrations', (req, res) => res.status(403).json({ error: { code: 'FORBIDDEN' } }));
   assert.equal((await request(app).post('/registrations')).status, 403);
+});
+
+test('registration list uses the same parameterized filters for counting and page retrieval', async () => {
+  const queries = [];
+  const db = {
+    request() {
+      const current = {
+        input() { return current; },
+        async query(statement) {
+          queries.push(statement);
+          if (statement.includes('COUNT_BIG')) return { recordset: [{ totalItems: 21 }] };
+          return { recordset: [{ id: 'PDK000021' }] };
+        },
+      };
+      return current;
+    },
+  };
+  const service = createRegistrationService({ db });
+
+  const page = await service.list({ page: 2, pageSize: 20, query: 'PDK', status: 'Chờ phát hành' });
+
+  assert.deepEqual(page, {
+    items: [{ id: 'PDK000021' }], page: 2, pageSize: 20, totalItems: 21, totalPages: 2,
+  });
+  assert.equal(queries.length, 2);
+  assert.match(queries[0], /FROM PhieuDangKy p/);
+  assert.match(queries[0], /p\.TrangThaiPhieu = @status/);
+  assert.match(queries[1], /FROM PhieuDangKy p\s+LEFT JOIN ChiTietPhieuDangKy/s);
+  assert.match(queries[1], /OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY/);
 });
