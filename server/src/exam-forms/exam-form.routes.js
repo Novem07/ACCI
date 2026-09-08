@@ -5,12 +5,13 @@ const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 const { httpError } = require('../errors');
+const { ROLES } = require('../domain/constants');
 
 function createExamFormRouter({ service, authService }) {
   const router = express.Router();
   router.use(authenticate(authService));
-  const staff = requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi');
-  const organizer = requireRole('Tổ chức thi');
+  const staff = requireRole(ROLES.RECEPTION, ROLES.ACCOUNTING, ROLES.EXAM_ORGANIZER);
+  const organizer = requireRole(ROLES.EXAM_ORGANIZER);
 
   router.get('/', staff, async (req, res, next) => {
     try {

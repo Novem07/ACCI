@@ -5,12 +5,13 @@ const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 const { httpError } = require('../errors');
+const { ROLES } = require('../domain/constants');
 
 function createCustomerRouter({ service, authService }) {
   const router = express.Router();
   router.use(authenticate(authService));
 
-  router.get('/', requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi'), async (req, res, next) => {
+  router.get('/', requireRole(ROLES.RECEPTION, ROLES.ACCOUNTING, ROLES.EXAM_ORGANIZER), async (req, res, next) => {
     try {
       const pagination = parsePagination(req.query);
       const page = await service.list(pagination);
@@ -20,7 +21,7 @@ function createCustomerRouter({ service, authService }) {
     }
   });
 
-  router.get('/:customerId', requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi'), async (req, res, next) => {
+  router.get('/:customerId', requireRole(ROLES.RECEPTION, ROLES.ACCOUNTING, ROLES.EXAM_ORGANIZER), async (req, res, next) => {
     try {
       res.json({ customer: await service.get(req.params.customerId) });
     } catch (error) {
@@ -28,7 +29,7 @@ function createCustomerRouter({ service, authService }) {
     }
   });
 
-  router.post('/', requireRole('Tiếp nhận'), async (req, res, next) => {
+  router.post('/', requireRole(ROLES.RECEPTION), async (req, res, next) => {
     const parsed = customerSchema.safeParse(req.body);
     if (!parsed.success) {
       next(httpError(400, 'VALIDATION_ERROR', 'Thông tin khách hàng không hợp lệ.', parsed.error.flatten().fieldErrors));

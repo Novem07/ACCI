@@ -3,12 +3,13 @@ const express = require('express');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 const { parsePagination, toPageResponse } = require('../http/pagination');
+const { ROLES } = require('../domain/constants');
 
 function createCatalogRouter({ service, authService }) {
   const router = express.Router();
   router.use(authenticate(authService));
-  const certificateStaff = requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi', 'Nhập liệu', 'Coi thi');
-  const candidateStaff = requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi');
+  const certificateStaff = requireRole(ROLES.RECEPTION, ROLES.ACCOUNTING, ROLES.EXAM_ORGANIZER, ROLES.DATA_ENTRY, ROLES.PROCTOR);
+  const candidateStaff = requireRole(ROLES.RECEPTION, ROLES.ACCOUNTING, ROLES.EXAM_ORGANIZER);
 
   router.get('/certificates', certificateStaff, async (req, res, next) => {
     try {

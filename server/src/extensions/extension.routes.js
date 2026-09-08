@@ -4,11 +4,12 @@ const { extensionSchema } = require('./extension.schema');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 const { httpError } = require('../errors');
+const { ROLES } = require('../domain/constants');
 
 function createExtensionRouter({ service, authService }) {
   const router = express.Router();
   router.use(authenticate(authService));
-  const reception = requireRole('Tiếp nhận');
+  const reception = requireRole(ROLES.RECEPTION);
 
   router.get('/:examFormId/extension-options', reception, async (req, res, next) => {
     try {

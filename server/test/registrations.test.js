@@ -173,6 +173,7 @@ test('registration service derives the date from its clock and validates certifi
   assert.equal(registration.registrationDate, '2030-05-06');
   assert.equal(queries.filter(({ statement }) => statement.includes('FROM ChungChi')).length, 1);
   assert.equal(queries.find(({ statement }) => statement.includes('FROM ChungChi')).inputs.certificateIds, '["CC001","CC002"]');
+  assert.equal(queries.find(({ statement }) => statement.includes('INSERT INTO PhieuDangKy')).inputs.status, 'Chờ phát hành');
 });
 
 test('registration service rejects an unknown certificate before writing the registration', async () => {

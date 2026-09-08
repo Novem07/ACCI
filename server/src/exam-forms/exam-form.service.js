@@ -1,6 +1,7 @@
 const { sql } = require('../db');
 const { httpError } = require('../errors');
 const { formatId } = require('../customers/customer.service');
+const { EXAM_FORM_STATUS, REGISTRATION_STATUS } = require('../domain/constants');
 
 async function nextExamFormId(transaction) {
   const result = await transaction.request().query('SELECT NEXT VALUE FOR dbo.SeqPhieuDuThi AS value');
@@ -24,7 +25,7 @@ function createExamFormService({ db, transactionFactory }) {
             WHERE MaPhieuDangKy = @registrationId
           `);
         if (!registration.recordset[0]) throw httpError(404, 'REGISTRATION_NOT_FOUND', 'Không tìm thấy phiếu đăng ký.');
-        if (registration.recordset[0].TrangThaiPhieu !== 'Chờ phát hành') {
+        if (registration.recordset[0].TrangThaiPhieu !== REGISTRATION_STATUS.PENDING_ISSUANCE) {
           throw httpError(409, 'REGISTRATION_ALREADY_ISSUED', 'Phiếu đăng ký không còn ở trạng thái chờ phát hành.');
         }
 
@@ -79,7 +80,7 @@ function createExamFormService({ db, transactionFactory }) {
             .input('examDate', sql.Date, selectedSchedule.examDate)
             .input('examTime', sql.Time, selectedSchedule.examTime)
             .input('remainingAttempts', sql.Int, 2)
-            .input('status', sql.NVarChar(50), 'Đang xử lý')
+            .input('status', sql.NVarChar(50), EXAM_FORM_STATUS.PROCESSING)
             .input('candidateId', sql.VarChar(20), assignment.candidateId)
             .input('certificateId', sql.VarChar(20), selectedSchedule.certificateId)
             .input('registrationId', sql.VarChar(20), input.registrationId)
@@ -98,7 +99,8 @@ function createExamFormService({ db, transactionFactory }) {
 
         await transaction.request()
           .input('registrationId', sql.VarChar(20), input.registrationId)
-          .query("UPDATE PhieuDangKy SET TrangThaiPhieu = N'Đã phát hành' WHERE MaPhieuDangKy = @registrationId");
+          .input('issuedStatus', sql.NVarChar(50), REGISTRATION_STATUS.ISSUED)
+          .query('UPDATE PhieuDangKy SET TrangThaiPhieu = @issuedStatus WHERE MaPhieuDangKy = @registrationId');
         await transaction.commit();
         return { registrationId: input.registrationId, forms: issuedForms };
       } catch (error) {

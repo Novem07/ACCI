@@ -5,12 +5,13 @@ const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 const { httpError } = require('../errors');
+const { ROLES } = require('../domain/constants');
 
 function createRegistrationRouter({ service, authService }) {
   const router = express.Router();
   router.use(authenticate(authService));
-  const reception = requireRole('Tiếp nhận');
-  const staff = requireRole('Tiếp nhận', 'Kế Toán', 'Tổ chức thi');
+  const reception = requireRole(ROLES.RECEPTION);
+  const staff = requireRole(ROLES.RECEPTION, ROLES.ACCOUNTING, ROLES.EXAM_ORGANIZER);
 
   router.get('/', staff, async (req, res, next) => {
     try {

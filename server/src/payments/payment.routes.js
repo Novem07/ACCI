@@ -5,11 +5,12 @@ const { parsePagination, toPageResponse } = require('../http/pagination');
 const { httpError } = require('../errors');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
+const { ROLES } = require('../domain/constants');
 
 function createPaymentRouter({ service, authService }) {
   const router = express.Router();
   router.use(authenticate(authService));
-  const accountant = requireRole('Kế Toán');
+  const accountant = requireRole(ROLES.ACCOUNTING);
 
   router.get('/', accountant, async (req, res, next) => {
     try {

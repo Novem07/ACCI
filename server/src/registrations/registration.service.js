@@ -2,6 +2,7 @@ const { sql } = require('../db');
 const { httpError } = require('../errors');
 const { formatId } = require('../customers/customer.service');
 const { toBusinessDate } = require('../domain/date');
+const { REGISTRATION_STATUS } = require('../domain/constants');
 
 async function nextTransactionId(transaction, sequenceName, prefix) {
   const result = await transaction.request().query(`SELECT NEXT VALUE FOR dbo.${sequenceName} AS value`);
@@ -46,10 +47,11 @@ function createRegistrationService({ db, transactionFactory }) {
           .input('registrationId', sql.VarChar(20), registrationId)
           .input('registrationDate', sql.Date, registrationDate)
           .input('customerId', sql.VarChar(20), input.customerId)
+          .input('status', sql.NVarChar(50), REGISTRATION_STATUS.PENDING_ISSUANCE)
           .input('userId', sql.VarChar(20), userId)
           .query(`
             INSERT INTO PhieuDangKy (MaPhieuDangKy, NgayDangKy, TrangThaiPhieu, MaKhachHang, NguoiTao)
-            VALUES (@registrationId, @registrationDate, N'Chờ phát hành', @customerId, @userId)
+            VALUES (@registrationId, @registrationDate, @status, @customerId, @userId)
           `);
 
         const candidateIds = [];
@@ -83,7 +85,7 @@ function createRegistrationService({ db, transactionFactory }) {
         return {
           id: registrationId,
           customerId: input.customerId,
-          status: 'Chờ phát hành',
+          status: REGISTRATION_STATUS.PENDING_ISSUANCE,
           candidateCount: candidateIds.length,
           candidateIds,
           createdBy: userId,
