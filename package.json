@@ -15,12 +15,14 @@
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test e2e/accessibility.spec.js --project=accessibility",
     "build": "npm run build --workspace client",
     "audit:prod": "npm audit --omit=dev --audit-level=high --workspaces",
     "db:smoke": "node scripts/run-powershell.js scripts/db-smoke.ps1",
     "db:seed-demo": "node scripts/run-powershell.js scripts/seed-demo.ps1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "9.39.5",
     "@playwright/test": "^1.63.0",
     "concurrently": "10.0.5",

@@ -10,7 +10,8 @@ module.exports = defineConfig({
     reuseExistingServer: false,
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 768 } } },
-    { name: 'mobile-chromium', use: { ...devices['Pixel 5'] } },
+    { name: 'desktop-chromium', testIgnore: /accessibility\.spec\.js/, use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 768 } } },
+    { name: 'mobile-chromium', testIgnore: /accessibility\.spec\.js/, use: { ...devices['Pixel 5'] } },
+    { name: 'accessibility', testMatch: /accessibility\.spec\.js/, use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 768 } } },
   ],
 });
