@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const request = require('supertest');
 
 const { createApp } = require('../src/app');
+const { createExamFormService } = require('../src/exam-forms/exam-form.service');
 
 const config = {
   nodeEnv: 'test',
@@ -64,4 +65,33 @@ test('exam-form list validates page size and returns the common page shape', asy
   assert.equal(page.status, 200);
   assert.deepEqual(page.body.items, items);
   assert.deepEqual(page.body.examForms, items);
+});
+
+test('exam-form issuance validates assignments in one locked set query before inserts', async () => {
+  const statements = [];
+  let sequence = 0;
+  const transaction = {
+    begin: async () => undefined, commit: async () => undefined, rollback: async () => undefined,
+    request() {
+      const inputs = {};
+      const current = {
+        input(name, type, value) { inputs[name] = value; return current; },
+        async query(statement) {
+          statements.push(statement);
+          if (statement.includes('FROM PhieuDangKy')) return { recordset: [{ MaPhieuDangKy: 'PDK000001', TrangThaiPhieu: 'Chờ phát hành' }] };
+          if (statement.includes('WITH RequestedAssignments')) return { recordset: JSON.parse(inputs.assignments).map((item) => ({ ...item, certificateId: 'CC001', matchedScheduleId: item.scheduleId, examDate: '2030-05-20', examTime: '08:00', remainingSeats: 3 })) };
+          if (statement.includes('UPDATE LichThi')) return { recordset: [], rowsAffected: [1] };
+          if (statement.includes('SeqPhieuDuThi')) return { recordset: [{ value: ++sequence }] };
+          return { recordset: [], rowsAffected: [1] };
+        },
+      };
+      return current;
+    },
+  };
+  const service = createExamFormService({ db: {}, transactionFactory: () => transaction });
+  const assignments = ['TS000001', 'TS000002', 'TS000003'].map((candidateId) => ({ candidateId, scheduleId: 'LT001' }));
+  const result = await service.create({ input: { registrationId: 'PDK000001', assignments }, userId: 'NV003' });
+  assert.equal(result.forms.length, 3);
+  assert.equal(statements.filter((statement) => statement.includes('WITH RequestedAssignments')).length, 1);
+  assert.equal(statements.filter((statement) => statement.includes('FROM PhieuDuThi WITH')).length, 0);
 });

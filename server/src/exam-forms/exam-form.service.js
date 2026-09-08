@@ -28,45 +28,50 @@ function createExamFormService({ db, transactionFactory }) {
           throw httpError(409, 'REGISTRATION_ALREADY_ISSUED', 'Phiếu đăng ký không còn ở trạng thái chờ phát hành.');
         }
 
-        const registrationDetails = await transaction.request()
+        const assignments = await transaction.request()
           .input('registrationId', sql.VarChar(20), input.registrationId)
+          .input('assignments', sql.NVarChar(sql.MAX), JSON.stringify(input.assignments))
           .query(`
-            SELECT MaThiSinh AS candidateId, MaChungChi AS certificateId
-            FROM ChiTietPhieuDangKy WITH (UPDLOCK, HOLDLOCK)
-            WHERE MaPhieuDangKy = @registrationId
+            WITH RequestedAssignments AS (
+              SELECT candidateId, scheduleId
+              FROM OPENJSON(@assignments)
+              WITH (candidateId VARCHAR(20) '$.candidateId', scheduleId VARCHAR(20) '$.scheduleId')
+            )
+            SELECT a.candidateId, a.scheduleId, d.MaChungChi AS certificateId,
+                   existing.MaPhieuDuThi AS existingExamFormId,
+                   s.MaLichThi AS matchedScheduleId, s.NgayThi AS examDate,
+                   s.GioThi AS examTime, s.SoChoTrong AS remainingSeats
+            FROM RequestedAssignments a
+            LEFT JOIN ChiTietPhieuDangKy d WITH (UPDLOCK, HOLDLOCK)
+              ON d.MaPhieuDangKy = @registrationId AND d.MaThiSinh = a.candidateId
+            LEFT JOIN PhieuDuThi existing WITH (UPDLOCK, HOLDLOCK)
+              ON existing.MaPhieuDangKy = @registrationId AND existing.MaThiSinh = a.candidateId
+            LEFT JOIN LichThi s WITH (UPDLOCK, HOLDLOCK)
+              ON s.MaLichThi = a.scheduleId AND s.MaChungChi = d.MaChungChi
           `);
-        const detailsByCandidate = new Map(registrationDetails.recordset.map((detail) => [detail.candidateId, detail]));
-        if (detailsByCandidate.size !== input.assignments.length) {
+        if (assignments.recordset.length !== input.assignments.length || assignments.recordset.some((item) => !item.certificateId)) {
           throw httpError(400, 'ASSIGNMENTS_INCOMPLETE', 'Phải gán lịch thi cho toàn bộ thí sinh trong phiếu đăng ký.');
+        }
+        if (assignments.recordset.some((item) => item.existingExamFormId)) throw httpError(409, 'EXAM_FORM_ALREADY_EXISTS', 'Thí sinh đã có phiếu dự thi.');
+        if (assignments.recordset.some((item) => !item.matchedScheduleId)) throw httpError(400, 'SCHEDULE_MISMATCH', 'Lịch thi không cùng loại chứng chỉ.');
+        const scheduleCounts = new Map();
+        assignments.recordset.forEach((item) => scheduleCounts.set(item.scheduleId, (scheduleCounts.get(item.scheduleId) || 0) + 1));
+        if (assignments.recordset.some((item) => Number(item.remainingSeats) < scheduleCounts.get(item.scheduleId))) {
+          throw httpError(409, 'SCHEDULE_FULL', 'Lịch thi đã hết chỗ.');
+        }
+        const assignmentsByCandidate = new Map(assignments.recordset.map((item) => [item.candidateId, item]));
+
+        for (const [scheduleId, assignedCount] of scheduleCounts) {
+          const capacityUpdate = await transaction.request()
+            .input('scheduleId', sql.VarChar(20), scheduleId)
+            .input('assignedCount', sql.Int, assignedCount)
+            .query('UPDATE LichThi SET SoChoTrong = SoChoTrong - @assignedCount WHERE MaLichThi = @scheduleId AND SoChoTrong >= @assignedCount');
+          if (capacityUpdate.rowsAffected?.[0] !== 1) throw httpError(409, 'SCHEDULE_FULL', 'Lịch thi đã hết chỗ.');
         }
 
         const issuedForms = [];
         for (const assignment of input.assignments) {
-          const detail = detailsByCandidate.get(assignment.candidateId);
-          if (!detail) throw httpError(400, 'CANDIDATE_NOT_IN_REGISTRATION', 'Thí sinh không thuộc phiếu đăng ký.');
-
-          const duplicate = await transaction.request()
-            .input('registrationId', sql.VarChar(20), input.registrationId)
-            .input('candidateId', sql.VarChar(20), assignment.candidateId)
-            .query(`
-              SELECT TOP 1 MaPhieuDuThi
-              FROM PhieuDuThi WITH (UPDLOCK, HOLDLOCK)
-              WHERE MaPhieuDangKy = @registrationId AND MaThiSinh = @candidateId
-            `);
-          if (duplicate.recordset[0]) throw httpError(409, 'EXAM_FORM_ALREADY_EXISTS', 'Thí sinh đã có phiếu dự thi.');
-
-          const schedule = await transaction.request()
-            .input('scheduleId', sql.VarChar(20), assignment.scheduleId)
-            .input('certificateId', sql.VarChar(20), detail.certificateId)
-            .query(`
-              SELECT MaLichThi AS scheduleId, MaChungChi AS certificateId,
-                     NgayThi AS examDate, GioThi AS examTime, SoChoTrong AS remainingSeats
-              FROM LichThi WITH (UPDLOCK, HOLDLOCK)
-              WHERE MaLichThi = @scheduleId AND MaChungChi = @certificateId
-            `);
-          const selectedSchedule = schedule.recordset[0];
-          if (!selectedSchedule) throw httpError(400, 'SCHEDULE_MISMATCH', 'Lịch thi không cùng loại chứng chỉ.');
-          if (Number(selectedSchedule.remainingSeats) <= 0) throw httpError(409, 'SCHEDULE_FULL', 'Lịch thi đã hết chỗ.');
+          const selectedSchedule = assignmentsByCandidate.get(assignment.candidateId);
 
           const examFormId = await nextExamFormId(transaction);
           await transaction.request()
@@ -76,7 +81,7 @@ function createExamFormService({ db, transactionFactory }) {
             .input('remainingAttempts', sql.Int, 2)
             .input('status', sql.NVarChar(50), 'Đang xử lý')
             .input('candidateId', sql.VarChar(20), assignment.candidateId)
-            .input('certificateId', sql.VarChar(20), detail.certificateId)
+            .input('certificateId', sql.VarChar(20), selectedSchedule.certificateId)
             .input('registrationId', sql.VarChar(20), input.registrationId)
             .input('userId', sql.VarChar(20), userId)
             .input('scheduleId', sql.VarChar(20), assignment.scheduleId)
@@ -88,9 +93,6 @@ function createExamFormService({ db, transactionFactory }) {
                 (@examFormId, @examDate, @examTime, @remainingAttempts, @status,
                  @candidateId, @certificateId, @registrationId, @userId, @scheduleId)
             `);
-          await transaction.request()
-            .input('scheduleId', sql.VarChar(20), assignment.scheduleId)
-            .query('UPDATE LichThi SET SoChoTrong = SoChoTrong - 1 WHERE MaLichThi = @scheduleId');
           issuedForms.push({ id: examFormId, candidateId: assignment.candidateId, scheduleId: assignment.scheduleId });
         }
 
