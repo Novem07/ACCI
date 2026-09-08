@@ -3,13 +3,11 @@ import { BrowserRouter, MemoryRouter, Navigate, Route, Routes } from 'react-rout
 import ProtectedRoute from '../auth/ProtectedRoute';
 import RoleRoute from '../auth/RoleRoute';
 import ExamFormDetail from '../pages/ExamFormDetail';
-import ExtendFormPage from '../pages/ExtendFormPage';
 import CreateExtensionPage from '../features/extensions/CreateExtensionPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/LoginPage';
 import PaymentCheckoutPage from '../features/payments/PaymentCheckoutPage';
-import ViewExamForms from '../pages/ViewExamForms';
 import ExamFormListPage from '../features/exam-forms/ExamFormListPage';
 import RegistrationListPage from '../features/registrations/RegistrationListPage';
 import CreateRegistrationPage from '../features/registrations/CreateRegistrationPage';
