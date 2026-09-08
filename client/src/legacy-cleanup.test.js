@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
@@ -26,7 +26,7 @@ it('contains no retired page surface, raster branding, or unused UI dependencies
   ];
 
   retiredPaths.forEach((path) => expect(existsSync(resolve(clientRoot, path)), path).toBe(false));
-  expect(readdirSync(resolve(clientRoot, 'src/pages'))).toEqual([]);
+  expect(existsSync(resolve(clientRoot, 'src/pages'))).toBe(false);
 
   const manifest = JSON.parse(readFileSync(resolve(clientRoot, 'public/manifest.json'), 'utf8'));
   expect(manifest.name).toBe('ACCI Center');
