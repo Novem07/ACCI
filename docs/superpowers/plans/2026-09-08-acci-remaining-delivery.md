@@ -1,6 +1,6 @@
 # ACCI Remaining Modernization Delivery Plan
 
-**Status:** Completed on `feat/acci-modernization`; verification evidence is in `docs/superpowers/verification/2026-09-08-acci-modernization-handoff.md`.  
+**Status:** Completed on `feat/acci-modernization`; verification evidence is in `docs/superpowers/verification/2026-09-08-acci-modernization-handoff.md`.
 **Goal:** Complete the approved ACCI modernization safely from the current foundation, then deliver a clean, tested branch ready to merge into main.
 
 ## Current baseline
