@@ -15,28 +15,39 @@ async function nextExtensionId(transaction) {
 function createExtensionService({ db, transactionFactory, clock = () => new Date() }) {
   const makeTransaction = transactionFactory || (() => new sql.Transaction(db));
   return {
-    async options(examFormId) {
+    async options(examFormId, { now = clock() } = {}) {
         const exam = await db.request()
           .input('examFormId', sql.VarChar(20), examFormId)
           .query(`
-          SELECT MaPhieuDuThi AS examFormId, MaChungChi AS certificateId, MaLichThi AS currentScheduleId,
-                 SoLanGiaHanConLai AS remainingAttempts
-          FROM PhieuDuThi
+          SELECT p.MaPhieuDuThi AS examFormId, p.MaChungChi AS certificateId, p.MaLichThi AS currentScheduleId,
+                 p.SoLanGiaHanConLai AS remainingAttempts, l.NgayThi AS currentExamDate, l.GioThi AS currentExamTime,
+                 l.ThoiGianThi AS currentDuration, l.SoChoTrong AS currentRemainingSeats, l.MaPhongThi AS currentRoomId
+          FROM PhieuDuThi p JOIN LichThi l ON l.MaLichThi = p.MaLichThi
           WHERE MaPhieuDuThi = @examFormId
         `);
       if (!exam.recordset[0]) throw httpError(404, 'EXAM_FORM_NOT_FOUND', 'Không tìm thấy phiếu dự thi.');
       const schedules = await db.request()
         .input('certificateId', sql.VarChar(20), exam.recordset[0].certificateId)
-        .input('currentScheduleId', sql.VarChar(20), exam.recordset[0].currentScheduleId)
         .query(`
           SELECT MaLichThi AS scheduleId, NgayThi AS examDate, GioThi AS examTime,
                  ThoiGianThi AS duration, SoChoTrong AS remainingSeats,
                  MaChungChi AS certificateId, MaPhongThi AS roomId
           FROM LichThi
-          WHERE MaChungChi = @certificateId AND MaLichThi <> @currentScheduleId AND SoChoTrong > 0
+          WHERE MaChungChi = @certificateId
           ORDER BY NgayThi, GioThi, MaLichThi
         `);
-      return { examFormId, schedules: schedules.recordset };
+      const currentSchedule = { scheduleId: exam.recordset[0].currentScheduleId, examDate: exam.recordset[0].currentExamDate, examTime: exam.recordset[0].currentExamTime, duration: exam.recordset[0].currentDuration, remainingSeats: exam.recordset[0].currentRemainingSeats, roomId: exam.recordset[0].currentRoomId };
+      return {
+        examForm: { examFormId, certificateId: exam.recordset[0].certificateId, remainingAttempts: Number(exam.recordset[0].remainingAttempts) },
+        currentSchedule,
+        schedules: schedules.recordset.map((schedule) => {
+          let reason = null;
+          if (schedule.scheduleId === currentSchedule.scheduleId) reason = 'CURRENT_SCHEDULE';
+          else if (Number(schedule.remainingSeats) <= 0) reason = 'SCHEDULE_FULL';
+          else if (scheduleDateTime(schedule.examDate, schedule.examTime).getTime() - now.getTime() < 24 * 60 * 60 * 1000) reason = 'EXTENSION_WINDOW_CLOSED';
+          return { ...schedule, eligibility: { allowed: !reason, reason } };
+        }),
+      };
     },
 
     async create({ input, userId, now = clock() }) {
@@ -85,6 +96,11 @@ function createExtensionService({ db, transactionFactory, clock = () => new Date
           throw httpError(409, 'EXTENSION_WINDOW_CLOSED', 'Lịch thi mới phải còn ít nhất 24 giờ.');
         }
 
+        const capacityUpdate = await transaction.request()
+          .input('scheduleId', sql.VarChar(20), input.newScheduleId)
+          .query('UPDATE LichThi SET SoChoTrong = SoChoTrong - 1 WHERE MaLichThi = @scheduleId AND SoChoTrong > 0');
+        if (capacityUpdate.rowsAffected?.[0] !== 1) throw httpError(409, 'SCHEDULE_FULL', 'Lịch thi mới đã hết chỗ.');
+
         const extensionId = await nextExtensionId(transaction);
         const requestedAt = now.toISOString().slice(0, 10);
         await transaction.request()
@@ -114,9 +130,6 @@ function createExtensionService({ db, transactionFactory, clock = () => new Date
         await transaction.request()
           .input('scheduleId', sql.VarChar(20), current.currentScheduleId)
           .query('UPDATE LichThi SET SoChoTrong = SoChoTrong + 1 WHERE MaLichThi = @scheduleId');
-        await transaction.request()
-          .input('scheduleId', sql.VarChar(20), input.newScheduleId)
-          .query('UPDATE LichThi SET SoChoTrong = SoChoTrong - 1 WHERE MaLichThi = @scheduleId');
         await transaction.commit();
         return {
           id: extensionId,
