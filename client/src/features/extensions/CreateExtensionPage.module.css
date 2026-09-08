@@ -1,0 +1,29 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.scheduleOptions {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.scheduleOption {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.scheduleOption:has(input:disabled) {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
