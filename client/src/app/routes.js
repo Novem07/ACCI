@@ -31,3 +31,7 @@ export const navigationByRole = {
   [ROLES.dataEntry]: [{ to: PATHS.dataEntry, label: 'Nhập liệu', icon: 'file', description: 'Không gian làm việc của bộ phận nhập liệu.' }],
   [ROLES.proctor]: [{ to: PATHS.proctor, label: 'Coi thi', icon: 'users', description: 'Không gian làm việc của bộ phận coi thi.' }],
 };
+
+export function getLandingPath(role) {
+  return navigationByRole[role]?.[0]?.to || PATHS.home;
+}

@@ -8,7 +8,7 @@ import ExamFormDetail from '../pages/ExamFormDetail';
 import ExtendFormPage from '../pages/ExtendFormPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
 import HomePage from '../pages/HomePage';
-import LoginPage from '../pages/LoginPage';
+import LoginPage from '../features/auth/LoginPage';
 import ProcessRegister from '../pages/ProcessRegister';
 import ViewExamForms from '../pages/ViewExamForms';
 import ViewRegisterPage from '../pages/ViewRegisterPage';
