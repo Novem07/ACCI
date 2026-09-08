@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../auth/ProtectedRoute';
 import RoleRoute from '../auth/RoleRoute';
-import ExamFormDetail from '../pages/ExamFormDetail';
+import ExamFormDetailPage from '../features/exam-forms/ExamFormDetailPage';
 import CreateExtensionPage from '../features/extensions/CreateExtensionPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
 import HomePage from '../pages/HomePage';
@@ -43,7 +43,7 @@ function AppRoutes() {
         <Route element={<RoleRoute roles={[ROLES.reception, ROLES.accounting, ROLES.examOrganization]} />}>
           <Route path={PATHS.candidates} element={<CandidateListPage />} />
           <Route path={PATHS.examForms} element={<ExamFormListPage />} />
-          <Route path={PATHS.examFormDetail} element={<ExamFormDetail />} />
+          <Route path={PATHS.examFormDetail} element={<ExamFormDetailPage />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.examOrganization]} />}><Route path={PATHS.examOrganization} element={<UnavailablePage title="Tổ chức thi" />} /></Route>
         <Route element={<RoleRoute roles={[ROLES.dataEntry]} />}><Route path={PATHS.dataEntry} element={<UnavailablePage title="Nhập liệu" />} /></Route>
