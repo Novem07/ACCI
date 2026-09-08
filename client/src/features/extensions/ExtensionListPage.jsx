@@ -1,0 +1,7 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Alert, DataTable, EmptyState, LoadingState, Page } from '../../ui';
+import { api, getErrorMessage } from '../../api/client';
+import { formatDate } from '../../shared/format';
+
+export default function ExtensionListPage() { const [state, setState] = useState({ loading: true, items: [], error: null }); useEffect(() => { const c = new AbortController(); api.get('/exam-forms?page=1&pageSize=100', { signal: c.signal }).then((r) => setState({ loading: false, items: r.items || [], error: null })).catch((e) => { if (e.name !== 'AbortError') setState({ loading: false, items: [], error: e }); }); return () => c.abort(); }, []); return <Page title="Gia hạn chứng chỉ" description="Chọn phiếu dự thi để xem lịch thay thế đủ điều kiện.">{state.loading && <LoadingState />}{state.error && <Alert tone="danger">{getErrorMessage(state.error)}</Alert>}{!state.loading && !state.error && !state.items.length && <EmptyState title="Chưa có phiếu dự thi" />}{!state.loading && !state.error && state.items.length > 0 && <DataTable label="Phiếu đủ điều kiện gia hạn" columns={['Phiếu dự thi', 'Thí sinh', 'Ngày thi', 'Lần còn lại', '']} rows={state.items} getRowKey={(x) => x.examFormId} renderRow={(x) => <><td>{x.examFormId}</td><td>{x.candidateId}</td><td>{formatDate(x.examDate)}</td><td>{x.remainingAttempts}</td><td>{Number(x.remainingAttempts) > 0 && <Link to={`/giahan/create/${x.examFormId}`}>Gia hạn</Link>}</td></>} />}</Page>; }
