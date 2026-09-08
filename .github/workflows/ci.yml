@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     services:
       sqlserver:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -35,19 +36,32 @@ jobs:
       DB_TRUST_SERVER_CERTIFICATE: true
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Validate CI database secret
+        shell: bash
+        env:
+          CI_SQL_PASSWORD: ${{ secrets.CI_SQL_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CI_SQL_PASSWORD" ]]; then
+            echo "CI_SQL_PASSWORD repository secret is required for the SQL Server service." >&2
+            exit 1
+          fi
+
       - name: Install sqlcmd
         shell: bash
         run: |
+          set -euo pipefail
+          source /etc/os-release
           sudo apt-get update
-          sudo apt-get install -y curl apt-transport-https
-          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get install -y ca-certificates curl
+          curl -fsSL -o /tmp/packages-microsoft-prod.deb "https://packages.microsoft.com/config/ubuntu/${VERSION_ID}/packages-microsoft-prod.deb"
+          sudo dpkg -i /tmp/packages-microsoft-prod.deb
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
           echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"

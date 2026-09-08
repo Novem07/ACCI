@@ -86,6 +86,8 @@ npm run test:a11y
 
 `test:e2e` verifies desktop and mobile workflows with deterministic API fixtures. `test:a11y` runs Axe on login, reception, accounting, exam-form, extension, and dashboard pages and fails on serious or critical violations.
 
+GitHub Actions runs the same quality checks for pushes to `main` and pull requests. The database smoke test uses an isolated SQL Server container, so the repository must have an Actions secret named `CI_SQL_PASSWORD`. Use a strong SQL password and add it under **Settings → Secrets and variables → Actions**; never commit it to the repository.
+
 ## Role routes
 
 - `Tiếp nhận`: registration, customer/candidate lookup, and extension workflows
