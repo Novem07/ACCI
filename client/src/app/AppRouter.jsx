@@ -11,7 +11,7 @@ import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/LoginPage';
 import ProcessRegister from '../pages/ProcessRegister';
 import ViewExamForms from '../pages/ViewExamForms';
-import ViewRegisterPage from '../pages/ViewRegisterPage';
+import RegistrationListPage from '../features/registrations/RegistrationListPage';
 import ViewStudentListPage from '../pages/ViewStudentListPage';
 import ViewTempThisinh from '../pages/ViewTempThisinh';
 import AppShellLayout from './AppShellLayout';
@@ -30,7 +30,7 @@ function AppRoutes() {
       <Route element={<AppShellLayout />}>
         <Route path={PATHS.home} element={<HomePage />} />
         <Route element={<RoleRoute roles={[ROLES.reception]} />}>
-          <Route path={PATHS.registrations} element={<ViewRegisterPage />} />
+          <Route path={PATHS.registrations} element={<RegistrationListPage />} />
           <Route path={PATHS.registrationCreate} element={<CreateRegisterPage />} />
           <Route path={PATHS.extensions} element={<ExtendRegisterPage />} />
           <Route path={PATHS.extensionCreate} element={<ExtendFormPage />} />

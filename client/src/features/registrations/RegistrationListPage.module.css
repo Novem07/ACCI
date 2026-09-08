@@ -1,0 +1,3 @@
+.filterLabel { display: grid; gap: var(--space-1); color: var(--color-text-primary); font-weight: 600; }
+.pagination { display: flex; justify-content: flex-end; margin-top: var(--space-4); }
+@media (max-width: 560px) { .pagination { justify-content: stretch; } }
