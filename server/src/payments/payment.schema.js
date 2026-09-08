@@ -5,4 +5,8 @@ const invoiceSchema = z.object({
   invoiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 }).strict();
 
-module.exports = { invoiceSchema };
+const paymentListQuerySchema = z.object({
+  status: z.enum(['paid', 'unpaid']).optional(),
+}).strict();
+
+module.exports = { invoiceSchema, paymentListQuerySchema };

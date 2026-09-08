@@ -1,6 +1,8 @@
 const express = require('express');
 
-const { invoiceSchema } = require('./payment.schema');
+const { invoiceSchema, paymentListQuerySchema } = require('./payment.schema');
+const { parsePagination, toPageResponse } = require('../http/pagination');
+const { httpError } = require('../errors');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 
@@ -11,7 +13,11 @@ function createPaymentRouter({ service, authService }) {
 
   router.get('/', accountant, async (req, res, next) => {
     try {
-      res.json({ payments: await service.list() });
+      const pagination = parsePagination(req.query);
+      const parsed = paymentListQuerySchema.safeParse({ status: pagination.status || undefined });
+      if (!parsed.success) throw httpError(400, 'VALIDATION_ERROR', 'Bộ lọc thanh toán không hợp lệ.');
+      const page = await service.list({ ...pagination, status: parsed.data.status || '' });
+      res.json(toPageResponse(page, 'payments'));
     } catch (error) {
       next(error);
     }

@@ -55,20 +55,53 @@ async function nextInvoiceId(target) {
 function createPaymentService({ db, transactionFactory }) {
   const makeTransaction = transactionFactory || (() => new sql.Transaction(db));
   return {
-    async list() {
-      const result = await db.request().query(`
+    async list({ page, pageSize, query, status }) {
+      const offset = (page - 1) * pageSize;
+      const search = `%${query.replace(/[\\%_\[]/g, '\\$&')}%`;
+      const bindFilters = (request) => request
+        .input('query', sql.NVarChar(100), query)
+        .input('search', sql.NVarChar(202), search)
+        .input('status', sql.VarChar(10), status);
+      const whereClause = `
+        WHERE (@query = N'' OR p.MaPhieuDangKy LIKE @search ESCAPE '\\'
+          OR p.MaKhachHang LIKE @search ESCAPE '\\' OR kh.HoTen LIKE @search ESCAPE '\\')
+          AND (@status = ''
+            OR (@status = 'paid' AND EXISTS (SELECT 1 FROM HoaDonDangKy hd WHERE hd.MaPhieuDangKy = p.MaPhieuDangKy))
+            OR (@status = 'unpaid' AND NOT EXISTS (SELECT 1 FROM HoaDonDangKy hd WHERE hd.MaPhieuDangKy = p.MaPhieuDangKy)))
+      `;
+      const countResult = await bindFilters(db.request()).query(`
+        SELECT COUNT_BIG(*) AS totalItems
+        FROM PhieuDangKy p
+        JOIN KhachHang kh ON kh.MaKhachHang = p.MaKhachHang
+        ${whereClause}
+      `);
+      const totalItems = Number(countResult.recordset[0].totalItems);
+      const result = await bindFilters(db.request())
+        .input('offset', sql.Int, offset)
+        .input('pageSize', sql.Int, pageSize)
+        .query(`
         SELECT p.MaPhieuDangKy AS registrationId,
                p.MaKhachHang AS customerId,
                p.MaThanhToan AS invoiceId,
                p.NgayDangKy AS registrationDate,
                p.TrangThaiPhieu AS registrationStatus,
                kh.HoTen AS customerName,
-               kh.DonVi AS organization
+               kh.DonVi AS organization,
+               CASE WHEN EXISTS (SELECT 1 FROM HoaDonDangKy hd WHERE hd.MaPhieuDangKy = p.MaPhieuDangKy)
+                 THEN 'paid' ELSE 'unpaid' END AS status
         FROM PhieuDangKy p
         JOIN KhachHang kh ON kh.MaKhachHang = p.MaKhachHang
+        ${whereClause}
         ORDER BY p.NgayDangKy DESC, p.MaPhieuDangKy DESC
+        OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
       `);
-      return result.recordset;
+      return {
+        items: result.recordset,
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+      };
     },
 
     async get(registrationId) {
