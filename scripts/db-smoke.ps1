@@ -24,8 +24,9 @@ if (($existing | Out-String).Trim() -notin @('', 'NULL', '0')) {
 try {
     Invoke-SqlCommand ($baseArguments + @('-b', '-v', "DatabaseName=$smokeDbName", '-i', 'database/migrations/001_baseline.sql'))
     Invoke-SqlCommand ($baseArguments + @('-b', '-v', "DatabaseName=$smokeDbName", '-i', 'database/migrations/002_auth_and_workflow_integrity.sql'))
+    Invoke-SqlCommand ($baseArguments + @('-b', '-v', "DatabaseName=$smokeDbName", '-i', 'database/migrations/003_workflow_indexes.sql'))
     Invoke-SqlCommand ($baseArguments + @('-b', '-v', "DatabaseName=$smokeDbName", '-i', 'Trigger.sql'))
-    Invoke-SqlCommand ($baseArguments + @('-b', '-Q', "USE [$smokeDbName]; IF OBJECT_ID(N'dbo.ChiTietPhieuDangKy') IS NULL THROW 51000, 'missing registration detail table', 1; IF OBJECT_ID(N'dbo.trg_check_role_tiepnhan_dk', N'TR') IS NULL THROW 51001, 'missing trigger', 1;"))
+    Invoke-SqlCommand ($baseArguments + @('-b', '-Q', "USE [$smokeDbName]; IF OBJECT_ID(N'dbo.ChiTietPhieuDangKy') IS NULL THROW 51000, 'missing registration detail table', 1; IF OBJECT_ID(N'dbo.trg_check_role_tiepnhan_dk', N'TR') IS NULL THROW 51001, 'missing trigger', 1; IF (SELECT COUNT(*) FROM sys.indexes WHERE name IN (N'UX_PhieuDuThi_Registration_Candidate', N'UX_HoaDonDangKy_Registration', N'IX_LichThi_Certificate_Date')) <> 3 THROW 51002, 'missing workflow index', 1;"))
     Write-Output 'Database smoke test passed.'
 }
 finally {
