@@ -8,6 +8,7 @@ const { createAuthService } = require('./auth/auth.service');
 const { createCustomerRouter } = require('./customers/customer.routes');
 const { createCustomerService } = require('./customers/customer.service');
 const { errorHandler } = require('./middleware/error-handler');
+const { requestId } = require('./middleware/request-id');
 const { createRegistrationRouter } = require('./registrations/registration.routes');
 const { createRegistrationService } = require('./registrations/registration.service');
 const { createPaymentRouter } = require('./payments/payment.routes');
@@ -23,6 +24,7 @@ function createApp({ db, config, services = {} } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
+  app.use(requestId);
   app.use(helmet());
   app.use(cors({
     origin: config?.clientOrigin || 'http://localhost:3000',

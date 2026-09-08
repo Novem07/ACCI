@@ -4,6 +4,7 @@ const { issueExamFormsSchema } = require('./exam-form.schema');
 const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
+const { httpError } = require('../errors');
 
 function createExamFormRouter({ service, authService }) {
   const router = express.Router();
@@ -32,9 +33,7 @@ function createExamFormRouter({ service, authService }) {
   router.post('/', organizer, async (req, res, next) => {
     const parsed = issueExamFormsSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Phân lịch thi không hợp lệ.', details: parsed.error.flatten().fieldErrors },
-      });
+      next(httpError(400, 'VALIDATION_ERROR', 'Phân lịch thi không hợp lệ.', parsed.error.flatten().fieldErrors));
       return;
     }
     try {

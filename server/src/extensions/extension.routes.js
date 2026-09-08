@@ -3,6 +3,7 @@ const express = require('express');
 const { extensionSchema } = require('./extension.schema');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
+const { httpError } = require('../errors');
 
 function createExtensionRouter({ service, authService }) {
   const router = express.Router();
@@ -20,9 +21,7 @@ function createExtensionRouter({ service, authService }) {
   router.post('/', reception, async (req, res, next) => {
     const parsed = extensionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Thông tin gia hạn không hợp lệ.', details: parsed.error.flatten().fieldErrors },
-      });
+      next(httpError(400, 'VALIDATION_ERROR', 'Thông tin gia hạn không hợp lệ.', parsed.error.flatten().fieldErrors));
       return;
     }
     try {

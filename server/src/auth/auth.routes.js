@@ -4,6 +4,7 @@ const { z } = require('zod');
 
 const { authError, createAuthService } = require('./auth.service');
 const { authenticate } = require('../middleware/authenticate');
+const { httpError } = require('../errors');
 
 const loginSchema = z.object({
   employeeId: z.string().trim().min(1).max(20),
@@ -20,16 +21,6 @@ function cookieOptions(config) {
   };
 }
 
-function sendError(res, error) {
-  const status = error.status || 500;
-  res.status(status).json({
-    error: {
-      code: error.code || 'INTERNAL_ERROR',
-      message: status >= 500 ? 'Đã xảy ra lỗi máy chủ.' : error.message,
-    },
-  });
-}
-
 function createAuthRouter({ db, config, authService }) {
   const router = express.Router();
   const service = authService || createAuthService({ db, jwtSecret: config.jwtSecret });
@@ -38,19 +29,13 @@ function createAuthRouter({ db, config, authService }) {
     limit: config.nodeEnv === 'test' ? 100 : 5,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    message: { error: { code: 'LOGIN_RATE_LIMITED', message: 'Quá nhiều lần đăng nhập thất bại.' } },
+    handler: (req, res, next) => next(httpError(429, 'LOGIN_RATE_LIMITED', 'Quá nhiều lần đăng nhập thất bại.')),
   });
 
-  router.post('/login', loginLimiter, async (req, res) => {
+  router.post('/login', loginLimiter, async (req, res, next) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Mã nhân viên và mật khẩu là bắt buộc.',
-          details: parsed.error.flatten().fieldErrors,
-        },
-      });
+      next(httpError(400, 'VALIDATION_ERROR', 'Mã nhân viên và mật khẩu là bắt buộc.', parsed.error.flatten().fieldErrors));
       return;
     }
 
@@ -59,7 +44,7 @@ function createAuthRouter({ db, config, authService }) {
       res.cookie('acci_session', token, cookieOptions(config));
       res.status(200).json({ user });
     } catch (error) {
-      sendError(res, error);
+      next(error);
     }
   });
 

@@ -68,14 +68,7 @@ test('role middleware rejects missing and wrong roles', async () => {
   const app = createApp({ db: createDb(), config });
   const login = await request(app).post('/api/auth/login').send({ employeeId: 'NV001', password: 'correct-password' });
   const cookie = login.headers['set-cookie'];
-  const roleApp = require('../src/middleware/require-role').requireRole;
-  const { authenticate } = require('../src/middleware/authenticate');
-  const express = require('express');
-  const router = express.Router();
-  const authService = require('../src/auth/auth.service').createAuthService({ db: createDb(), jwtSecret: config.jwtSecret });
-  router.get('/restricted', authenticate(authService), roleApp('Kế Toán'), (req, res) => res.json({ ok: true }));
-  app.use(router);
 
-  assert.equal((await request(app).get('/restricted')).status, 401);
-  assert.equal((await request(app).get('/restricted').set('Cookie', cookie)).status, 403);
+  assert.equal((await request(app).get('/api/payments')).status, 401);
+  assert.equal((await request(app).get('/api/payments').set('Cookie', cookie)).status, 403);
 });

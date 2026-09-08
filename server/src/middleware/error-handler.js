@@ -10,6 +10,7 @@ function errorHandler(error, req, res, next) {
     error: {
       code,
       message: status === 500 ? 'Đã xảy ra lỗi máy chủ.' : error.message,
+      requestId: req.requestId,
     },
   };
 

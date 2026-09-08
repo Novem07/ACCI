@@ -50,9 +50,7 @@ function createPaymentRouter({ service, authService }) {
   router.post('/:registrationId/invoices', accountant, async (req, res, next) => {
     const parsed = invoiceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Thông tin hóa đơn không hợp lệ.', details: parsed.error.flatten().fieldErrors },
-      });
+      next(httpError(400, 'VALIDATION_ERROR', 'Thông tin hóa đơn không hợp lệ.', parsed.error.flatten().fieldErrors));
       return;
     }
     try {

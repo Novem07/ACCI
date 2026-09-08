@@ -1,15 +1,13 @@
+const { httpError } = require('../errors');
+
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) {
-      res.status(401).json({
-        error: { code: 'UNAUTHENTICATED', message: 'Bạn cần đăng nhập.' },
-      });
+      next(httpError(401, 'UNAUTHENTICATED', 'Bạn cần đăng nhập.'));
       return;
     }
     if (!roles.includes(req.user.role)) {
-      res.status(403).json({
-        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền thực hiện thao tác này.' },
-      });
+      next(httpError(403, 'FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này.'));
       return;
     }
     next();
