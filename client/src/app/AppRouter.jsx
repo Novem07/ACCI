@@ -5,7 +5,7 @@ import RoleRoute from '../auth/RoleRoute';
 import ExamFormDetailPage from '../features/exam-forms/ExamFormDetailPage';
 import CreateExtensionPage from '../features/extensions/CreateExtensionPage';
 import ExtensionListPage from '../features/extensions/ExtensionListPage';
-import HomePage from '../pages/HomePage';
+import DashboardPage from '../features/dashboard/DashboardPage';
 import LoginPage from '../features/auth/LoginPage';
 import PaymentCheckoutPage from '../features/payments/PaymentCheckoutPage';
 import ExamFormListPage from '../features/exam-forms/ExamFormListPage';
@@ -16,10 +16,7 @@ import PaymentQueuePage from '../features/payments/PaymentQueuePage';
 import ViewTempThisinh from '../pages/ViewTempThisinh';
 import AppShellLayout from './AppShellLayout';
 import { PATHS, ROLES } from './routes';
-
-function UnavailablePage({ title }) {
-  return <main className="page-wrapper"><h1>{title}</h1><p>Chức năng này đang được hoàn thiện và chưa sẵn sàng để sử dụng.</p></main>;
-}
+import { UnavailableModule } from '../ui';
 
 function AppRoutes() {
   return <Routes>
@@ -28,7 +25,7 @@ function AppRoutes() {
     <Route path="/register" element={<Navigate to={PATHS.registrationCreate} replace />} />
     <Route element={<ProtectedRoute />}>
       <Route element={<AppShellLayout />}>
-        <Route path={PATHS.home} element={<HomePage />} />
+        <Route path={PATHS.home} element={<DashboardPage />} />
         <Route element={<RoleRoute roles={[ROLES.reception]} />}>
           <Route path={PATHS.registrations} element={<RegistrationListPage />} />
           <Route path={PATHS.registrationCreate} element={<CreateRegistrationPage />} />
@@ -45,9 +42,9 @@ function AppRoutes() {
           <Route path={PATHS.examForms} element={<ExamFormListPage />} />
           <Route path={PATHS.examFormDetail} element={<ExamFormDetailPage />} />
         </Route>
-        <Route element={<RoleRoute roles={[ROLES.examOrganization]} />}><Route path={PATHS.examOrganization} element={<UnavailablePage title="Tổ chức thi" />} /></Route>
-        <Route element={<RoleRoute roles={[ROLES.dataEntry]} />}><Route path={PATHS.dataEntry} element={<UnavailablePage title="Nhập liệu" />} /></Route>
-        <Route element={<RoleRoute roles={[ROLES.proctor]} />}><Route path={PATHS.proctor} element={<UnavailablePage title="Coi thi" />} /></Route>
+        <Route element={<RoleRoute roles={[ROLES.examOrganization]} />}><Route path={PATHS.examOrganization} element={<UnavailableModule title="Tổ chức thi" description="Chức năng điều phối kỳ thi sẽ được mở khi quy trình nghiệp vụ được phê duyệt." />} /></Route>
+        <Route element={<RoleRoute roles={[ROLES.dataEntry]} />}><Route path={PATHS.dataEntry} element={<UnavailableModule title="Nhập liệu" description="Chức năng nhập liệu sẽ được mở khi quy trình nghiệp vụ được phê duyệt." />} /></Route>
+        <Route element={<RoleRoute roles={[ROLES.proctor]} />}><Route path={PATHS.proctor} element={<UnavailableModule title="Coi thi" description="Chức năng coi thi sẽ được mở khi quy trình nghiệp vụ được phê duyệt." />} /></Route>
       </Route>
     </Route>
     <Route path="*" element={<Navigate to={PATHS.login} replace />} />

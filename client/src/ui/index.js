@@ -9,6 +9,7 @@ export { default as RadioGroup } from './forms/RadioGroup';
 export { default as Alert } from './feedback/Alert';
 export { default as LoadingState } from './feedback/LoadingState';
 export { default as EmptyState } from './feedback/EmptyState';
+export { default as UnavailableModule } from './feedback/UnavailableModule';
 export { default as Dialog } from './feedback/Dialog';
 export { ToastProvider, useToast } from './feedback/ToastProvider';
 export { default as Page } from './layout/Page';
