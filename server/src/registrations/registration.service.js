@@ -1,6 +1,7 @@
 const { sql } = require('../db');
 const { httpError } = require('../errors');
 const { formatId } = require('../customers/customer.service');
+const { toBusinessDate } = require('../domain/date');
 
 async function nextTransactionId(transaction, sequenceName, prefix) {
   const result = await transaction.request().query(`SELECT NEXT VALUE FOR dbo.${sequenceName} AS value`);
@@ -11,12 +12,13 @@ function createRegistrationService({ db, transactionFactory }) {
   const makeTransaction = transactionFactory || (() => new sql.Transaction(db));
 
   return {
-    async create({ input, userId }) {
+    async create({ input, userId, now = new Date() }) {
       const transaction = makeTransaction();
       let started = false;
       try {
         await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
         started = true;
+        const registrationDate = toBusinessDate(now);
 
         const customer = await transaction.request()
           .input('customerId', sql.VarChar(20), input.customerId)
@@ -25,10 +27,24 @@ function createRegistrationService({ db, transactionFactory }) {
           throw httpError(404, 'CUSTOMER_NOT_FOUND', 'Không tìm thấy khách hàng.');
         }
 
+        const certificateIds = [...new Set(input.candidates.map(({ certificateId }) => certificateId))];
+        const certificates = await transaction.request()
+          .input('certificateIds', sql.NVarChar(sql.MAX), JSON.stringify(certificateIds))
+          .query(`
+            SELECT MaChungChi AS id
+            FROM ChungChi
+            WHERE MaChungChi IN (SELECT [value] FROM OPENJSON(@certificateIds))
+          `);
+        const knownCertificateIds = new Set(certificates.recordset.map(({ id }) => id));
+        const missingCertificateIds = certificateIds.filter((certificateId) => !knownCertificateIds.has(certificateId));
+        if (missingCertificateIds.length > 0) {
+          throw httpError(400, 'CERTIFICATE_NOT_FOUND', `Không tìm thấy chứng chỉ ${missingCertificateIds.join(', ')}.`);
+        }
+
         const registrationId = await nextTransactionId(transaction, 'SeqPhieuDangKy', 'PDK');
         await transaction.request()
           .input('registrationId', sql.VarChar(20), registrationId)
-          .input('registrationDate', sql.Date, input.registrationDate)
+          .input('registrationDate', sql.Date, registrationDate)
           .input('customerId', sql.VarChar(20), input.customerId)
           .input('userId', sql.VarChar(20), userId)
           .query(`
@@ -38,13 +54,6 @@ function createRegistrationService({ db, transactionFactory }) {
 
         const candidateIds = [];
         for (const candidate of input.candidates) {
-          const certificate = await transaction.request()
-            .input('certificateId', sql.VarChar(20), candidate.certificateId)
-            .query('SELECT MaChungChi FROM ChungChi WHERE MaChungChi = @certificateId');
-          if (!certificate.recordset[0]) {
-            throw httpError(400, 'CERTIFICATE_NOT_FOUND', `Không tìm thấy chứng chỉ ${candidate.certificateId}.`);
-          }
-
           const candidateId = await nextTransactionId(transaction, 'SeqThiSinh', 'TS');
           await transaction.request()
             .input('candidateId', sql.VarChar(20), candidateId)
@@ -78,7 +87,7 @@ function createRegistrationService({ db, transactionFactory }) {
           candidateCount: candidateIds.length,
           candidateIds,
           createdBy: userId,
-          registrationDate: input.registrationDate,
+          registrationDate,
         };
       } catch (error) {
         if (started) await transaction.rollback().catch(() => undefined);

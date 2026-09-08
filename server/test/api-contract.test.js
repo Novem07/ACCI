@@ -97,7 +97,6 @@ test('reception contract creates a customer and registration, then cannot access
     .set('Cookie', cookie)
     .send({
       customerId: customerResponse.body.customer.id,
-      registrationDate: '2026-09-08',
       candidates: [{
         fullName: 'Thí sinh mẫu', certificateId: 'CC001', citizenId: '079123456789',
         phone: '0907654321', email: 'ts@example.com', address: 'Đà Nẵng',

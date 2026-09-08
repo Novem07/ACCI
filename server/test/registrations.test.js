@@ -5,6 +5,7 @@ const request = require('supertest');
 
 const { createApp } = require('../src/app');
 const { createRegistrationService } = require('../src/registrations/registration.service');
+const { toBusinessDate } = require('../src/domain/date');
 
 const config = {
   nodeEnv: 'test',
@@ -31,7 +32,7 @@ function authDb() {
   };
 }
 
-test('registration API returns a server-owned state and identity', async () => {
+test('registration API accepts only server-owned state and identity', async () => {
   const registrationService = {
     async create({ input, userId }) {
       return {
@@ -57,11 +58,23 @@ test('registration API returns a server-owned state and identity', async () => {
     });
   assert.equal(response.status, 400);
 
-  const valid = await request(app)
+  const clientOwnedDate = await request(app)
     .post('/api/registrations')
     .set('Cookie', login.headers['set-cookie'])
     .send({
       customerId: 'KH000001', registrationDate: '2026-09-08', candidates: [{
+        fullName: 'Trần Minh An', certificateId: 'CC001', citizenId: '079123456789',
+        phone: '0901234567', email: 'an@example.com', address: 'TP.HCM',
+      }],
+    });
+  assert.equal(clientOwnedDate.status, 400);
+  assert.equal(clientOwnedDate.body.error.code, 'VALIDATION_ERROR');
+
+  const valid = await request(app)
+    .post('/api/registrations')
+    .set('Cookie', login.headers['set-cookie'])
+    .send({
+      customerId: 'KH000001', candidates: [{
         fullName: 'Trần Minh An', certificateId: 'CC001', citizenId: '079123456789',
         phone: '0901234567', email: 'an@example.com', address: 'TP.HCM',
       }],
@@ -75,16 +88,17 @@ test('registration API returns a server-owned state and identity', async () => {
 test('registration service rolls back when a candidate cannot be persisted', async () => {
   let committed = 0;
   let rolledBack = 0;
-  let queryCount = 0;
   const makeRequest = () => {
     const current = {
       input() { return current; },
-      async query() {
-        queryCount += 1;
-        if (queryCount === 1) return { recordset: [{ MaKhachHang: 'KH000001' }] };
-        if (queryCount === 2) return { recordset: [{ value: 1 }] };
-        if (queryCount === 3) throw Object.assign(new Error('candidate insert failed'), { code: 'DB_ERROR' });
-        return { recordset: [{ MaChungChi: 'CC001' }] };
+      async query(statement) {
+        if (statement.includes('FROM KhachHang')) return { recordset: [{ MaKhachHang: 'KH000001' }] };
+        if (statement.includes('FROM ChungChi')) return { recordset: [{ id: 'CC001' }] };
+        if (statement.includes('NEXT VALUE')) return { recordset: [{ value: 1 }] };
+        if (statement.includes('INSERT INTO ThiSinh')) {
+          throw Object.assign(new Error('candidate insert failed'), { code: 'DB_ERROR' });
+        }
+        return { recordset: [] };
       },
     };
     return current;
@@ -100,7 +114,7 @@ test('registration service rolls back when a candidate cannot be persisted', asy
     service.create({
       userId: 'NV001',
       input: {
-        customerId: 'KH000001', registrationDate: '2026-09-08', candidates: [{
+        customerId: 'KH000001', candidates: [{
           fullName: 'Trần Minh An', certificateId: 'CC001', citizenId: '079123456789',
           phone: '0901234567', email: 'an@example.com', address: 'TP.HCM',
         }],
@@ -110,6 +124,96 @@ test('registration service rolls back when a candidate cannot be persisted', asy
   );
   assert.equal(committed, 0);
   assert.equal(rolledBack, 1);
+});
+
+test('registration service derives the date from its clock and validates certificates in one set query', async () => {
+  const queries = [];
+  let candidateSequence = 0;
+  const makeRequest = () => {
+    const inputs = {};
+    const current = {
+      input(name, type, value) {
+        inputs[name] = value;
+        return current;
+      },
+      async query(statement) {
+        queries.push({ statement, inputs });
+        if (statement.includes('FROM KhachHang')) return { recordset: [{ MaKhachHang: 'KH000001' }] };
+        if (statement.includes('FROM ChungChi')) {
+          return { recordset: JSON.parse(inputs.certificateIds).map((id) => ({ id })) };
+        }
+        if (statement.includes('SeqPhieuDangKy')) return { recordset: [{ value: 7 }] };
+        if (statement.includes('SeqThiSinh')) {
+          candidateSequence += 1;
+          return { recordset: [{ value: candidateSequence }] };
+        }
+        return { recordset: [] };
+      },
+    };
+    return current;
+  };
+  const transaction = {
+    begin: async () => undefined,
+    request: makeRequest,
+    commit: async () => undefined,
+    rollback: async () => undefined,
+  };
+  const service = createRegistrationService({ db: {}, transactionFactory: () => transaction });
+  const candidate = {
+    fullName: 'Trần Minh An', certificateId: 'CC001', citizenId: '079123456789',
+    phone: '0901234567', email: 'an@example.com', address: 'TP.HCM',
+  };
+
+  const registration = await service.create({
+    userId: 'NV001',
+    now: new Date('2030-05-06T08:00:00Z'),
+    input: { customerId: 'KH000001', candidates: [candidate, { ...candidate, certificateId: 'CC002' }] },
+  });
+
+  assert.equal(registration.registrationDate, '2030-05-06');
+  assert.equal(queries.filter(({ statement }) => statement.includes('FROM ChungChi')).length, 1);
+  assert.equal(queries.find(({ statement }) => statement.includes('FROM ChungChi')).inputs.certificateIds, '["CC001","CC002"]');
+});
+
+test('registration service rejects an unknown certificate before writing the registration', async () => {
+  const queries = [];
+  const transaction = {
+    begin: async () => undefined,
+    request() {
+      const current = {
+        input() { return current; },
+        async query(statement) {
+          queries.push(statement);
+          if (statement.includes('FROM KhachHang')) return { recordset: [{ MaKhachHang: 'KH000001' }] };
+          if (statement.includes('FROM ChungChi')) return { recordset: [] };
+          return { recordset: [] };
+        },
+      };
+      return current;
+    },
+    commit: async () => undefined,
+    rollback: async () => undefined,
+  };
+  const service = createRegistrationService({ db: {}, transactionFactory: () => transaction });
+
+  await assert.rejects(
+    service.create({
+      userId: 'NV001',
+      input: {
+        customerId: 'KH000001',
+        candidates: [{
+          fullName: 'Trần Minh An', certificateId: 'UNKNOWN', citizenId: '079123456789',
+          phone: '0901234567', email: 'an@example.com', address: 'TP.HCM',
+        }],
+      },
+    }),
+    { code: 'CERTIFICATE_NOT_FOUND', status: 400 }
+  );
+  assert.equal(queries.some((statement) => statement.includes('INSERT INTO PhieuDangKy')), false);
+});
+
+test('toBusinessDate uses the ACCI business timezone', () => {
+  assert.equal(toBusinessDate(new Date('2030-05-05T18:00:00Z')), '2030-05-06');
 });
 
 test('registration route requires reception role', async () => {
