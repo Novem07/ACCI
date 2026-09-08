@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import Icon from '../components/Icon';
-import BrandLogo from '../ui/brand/BrandLogo';
+import { BrandLogo, Icon } from '../ui';
 import { PATHS, navigationByRole } from './routes';
 import { UnsavedChangesProvider, useUnsavedChanges } from './UnsavedChangesContext';
 import styles from './AppShellLayout.module.css';
