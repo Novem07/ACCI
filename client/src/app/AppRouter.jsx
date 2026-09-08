@@ -7,7 +7,7 @@ import ExtendFormPage from '../pages/ExtendFormPage';
 import ExtendRegisterPage from '../pages/ExtendRegisterPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/LoginPage';
-import ProcessRegister from '../pages/ProcessRegister';
+import PaymentCheckoutPage from '../features/payments/PaymentCheckoutPage';
 import ViewExamForms from '../pages/ViewExamForms';
 import RegistrationListPage from '../features/registrations/RegistrationListPage';
 import CreateRegistrationPage from '../features/registrations/CreateRegistrationPage';
@@ -38,7 +38,7 @@ function AppRoutes() {
         </Route>
         <Route element={<RoleRoute roles={[ROLES.accounting]} />}>
           <Route path={PATHS.accounting} element={<PaymentQueuePage />} />
-          <Route path={PATHS.accountingProcess} element={<ProcessRegister />} />
+          <Route path={PATHS.accountingProcess} element={<PaymentCheckoutPage />} />
         </Route>
         <Route element={<RoleRoute roles={[ROLES.reception, ROLES.accounting, ROLES.examOrganization]} />}>
           <Route path={PATHS.candidates} element={<CandidateListPage />} />
