@@ -4,8 +4,8 @@ const { registrationSchema } = require('./registration.schema');
 const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
-const { httpError } = require('../errors');
 const { ROLES } = require('../domain/constants');
+const { validate } = require('../http/validate');
 
 function createRegistrationRouter({ service, authService }) {
   const router = express.Router();
@@ -23,14 +23,9 @@ function createRegistrationRouter({ service, authService }) {
     }
   });
 
-  router.post('/', reception, async (req, res, next) => {
-    const parsed = registrationSchema.safeParse(req.body);
-    if (!parsed.success) {
-      next(httpError(400, 'VALIDATION_ERROR', 'Thông tin đăng ký không hợp lệ.', parsed.error.flatten().fieldErrors));
-      return;
-    }
+  router.post('/', reception, validate({ body: registrationSchema }, 'Thông tin đăng ký không hợp lệ.'), async (req, res, next) => {
     try {
-      const registration = await service.create({ input: parsed.data, userId: req.user.id });
+      const registration = await service.create({ input: req.validated.body, userId: req.user.id });
       res.status(201).json({ registration });
     } catch (error) {
       next(error);

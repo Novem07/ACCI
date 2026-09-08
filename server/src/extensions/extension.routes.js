@@ -3,8 +3,8 @@ const express = require('express');
 const { extensionSchema } = require('./extension.schema');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
-const { httpError } = require('../errors');
 const { ROLES } = require('../domain/constants');
+const { validate } = require('../http/validate');
 
 function createExtensionRouter({ service, authService }) {
   const router = express.Router();
@@ -19,14 +19,9 @@ function createExtensionRouter({ service, authService }) {
     }
   });
 
-  router.post('/', reception, async (req, res, next) => {
-    const parsed = extensionSchema.safeParse(req.body);
-    if (!parsed.success) {
-      next(httpError(400, 'VALIDATION_ERROR', 'Thông tin gia hạn không hợp lệ.', parsed.error.flatten().fieldErrors));
-      return;
-    }
+  router.post('/', reception, validate({ body: extensionSchema }, 'Thông tin gia hạn không hợp lệ.'), async (req, res, next) => {
     try {
-      const extension = await service.create({ input: parsed.data, userId: req.user.id });
+      const extension = await service.create({ input: req.validated.body, userId: req.user.id });
       res.status(201).json({ extension });
     } catch (error) {
       next(error);

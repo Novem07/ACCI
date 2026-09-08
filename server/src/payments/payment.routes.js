@@ -6,6 +6,7 @@ const { httpError } = require('../errors');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
 const { ROLES } = require('../domain/constants');
+const { validate } = require('../http/validate');
 
 function createPaymentRouter({ service, authService }) {
   const router = express.Router();
@@ -48,16 +49,11 @@ function createPaymentRouter({ service, authService }) {
     }
   });
 
-  router.post('/:registrationId/invoices', accountant, async (req, res, next) => {
-    const parsed = invoiceSchema.safeParse(req.body);
-    if (!parsed.success) {
-      next(httpError(400, 'VALIDATION_ERROR', 'Thông tin hóa đơn không hợp lệ.', parsed.error.flatten().fieldErrors));
-      return;
-    }
+  router.post('/:registrationId/invoices', accountant, validate({ body: invoiceSchema }, 'Thông tin hóa đơn không hợp lệ.'), async (req, res, next) => {
     try {
       const invoice = await service.createInvoice({
         registrationId: req.params.registrationId,
-        input: parsed.data,
+        input: req.validated.body,
         userId: req.user.id,
       });
       res.status(201).json({ invoice });

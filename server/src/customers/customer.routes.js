@@ -4,8 +4,8 @@ const { customerSchema } = require('./customer.schema');
 const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
-const { httpError } = require('../errors');
 const { ROLES } = require('../domain/constants');
+const { validate } = require('../http/validate');
 
 function createCustomerRouter({ service, authService }) {
   const router = express.Router();
@@ -29,14 +29,9 @@ function createCustomerRouter({ service, authService }) {
     }
   });
 
-  router.post('/', requireRole(ROLES.RECEPTION), async (req, res, next) => {
-    const parsed = customerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      next(httpError(400, 'VALIDATION_ERROR', 'Thông tin khách hàng không hợp lệ.', parsed.error.flatten().fieldErrors));
-      return;
-    }
+  router.post('/', requireRole(ROLES.RECEPTION), validate({ body: customerSchema }, 'Thông tin khách hàng không hợp lệ.'), async (req, res, next) => {
     try {
-      res.status(201).json({ customer: await service.create(parsed.data) });
+      res.status(201).json({ customer: await service.create(req.validated.body) });
     } catch (error) {
       next(error);
     }

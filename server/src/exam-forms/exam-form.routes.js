@@ -4,8 +4,8 @@ const { issueExamFormsSchema } = require('./exam-form.schema');
 const { parsePagination, toPageResponse } = require('../http/pagination');
 const { authenticate } = require('../middleware/authenticate');
 const { requireRole } = require('../middleware/require-role');
-const { httpError } = require('../errors');
 const { ROLES } = require('../domain/constants');
+const { validate } = require('../http/validate');
 
 function createExamFormRouter({ service, authService }) {
   const router = express.Router();
@@ -31,14 +31,9 @@ function createExamFormRouter({ service, authService }) {
     }
   });
 
-  router.post('/', organizer, async (req, res, next) => {
-    const parsed = issueExamFormsSchema.safeParse(req.body);
-    if (!parsed.success) {
-      next(httpError(400, 'VALIDATION_ERROR', 'Phân lịch thi không hợp lệ.', parsed.error.flatten().fieldErrors));
-      return;
-    }
+  router.post('/', organizer, validate({ body: issueExamFormsSchema }, 'Phân lịch thi không hợp lệ.'), async (req, res, next) => {
     try {
-      res.status(201).json({ issuance: await service.create({ input: parsed.data, userId: req.user.id }) });
+      res.status(201).json({ issuance: await service.create({ input: req.validated.body, userId: req.user.id }) });
     } catch (error) {
       next(error);
     }
