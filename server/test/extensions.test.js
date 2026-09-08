@@ -71,3 +71,11 @@ test('extension service rolls back when the 24-hour rule rejects the schedule', 
   );
   assert.equal(rollbackCount, 1);
 });
+
+test('extension options expose server-owned eligibility reasons', async () => {
+  let requestCount = 0;
+  const db = { request() { const current = { input() { return current; }, async query() { requestCount += 1; if (requestCount === 1) return { recordset: [{ examFormId: 'PDT000001', certificateId: 'CC001', currentScheduleId: 'LT001', remainingAttempts: 2, currentExamDate: '2030-05-10', currentExamTime: '08:00:00', currentDuration: 60, currentRemainingSeats: 5, currentRoomId: 'P01' }] }; return { recordset: [{ scheduleId: 'LT001', examDate: '2030-05-10', examTime: '08:00:00', remainingSeats: 5 }, { scheduleId: 'LT002', examDate: '2030-05-12', examTime: '08:00:00', remainingSeats: 0 }, { scheduleId: 'LT003', examDate: '2030-05-10', examTime: '12:00:00', remainingSeats: 3 }] }; } }; return current; } };
+  const service = createExtensionService({ db, clock: () => new Date('2030-05-10T00:00:00Z') });
+  const result = await service.options('PDT000001');
+  assert.deepEqual(result.schedules.map((item) => item.eligibility.reason), ['CURRENT_SCHEDULE', 'SCHEDULE_FULL', 'EXTENSION_WINDOW_CLOSED']);
+});
